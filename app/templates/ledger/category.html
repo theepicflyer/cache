@@ -6,9 +6,17 @@
 <c-burrow.habitat kind="oak" mood="{% if cat.is_fund %}{% if balance < 0 %}worried{% else %}happy{% endif %}{% elif history.consistently_over %}worried{% else %}happy{% endif %}">
   <span class="bh-habitat__eyebrow"><a href="{% url 'ledger:settings' %}" style="color:inherit">Settings</a> · {{ cat.get_kind_display }}{% if cat.archived %} · archived{% endif %}</span>
   <h1 class="page-title page-title--icon">{% category_tile cat %}{{ cat.name }}</h1>
-  <p class="bh-habitat__sub">
-    {% if cat.is_income %}{% money received_now %} this month{% elif cat.is_fund %}{% money balance %} saved · +{% money amount_now %} a month{% else %}{% money amount_now %} a month{% if history.months_counted %} · over in {{ history.months_over }} of {{ history.months_counted }} months{% endif %}{% endif %}
-  </p>
+  <div class="bh-facts">
+    {% if cat.is_income %}
+      <span class="bh-tag bh-tag--in">{% money received_now %} this month</span>
+    {% elif cat.is_fund %}
+      <span class="bh-tag {% if balance < 0 %} bh-tag--over{% endif %}">{% money balance %} saved</span>
+      <span class="bh-tag bh-tag--in">+{% money amount_now %} a month</span>
+    {% else %}
+      <span class="bh-tag">{% money amount_now %} a month</span>
+      {% if history.months_counted %}<span class="bh-tag {% if history.consistently_over %}bh-tag--over{% endif %}">Over in {{ history.months_over }} of {{ history.months_counted }} months</span>{% endif %}
+    {% endif %}
+  </div>
 </c-burrow.habitat>
 
 <div class="cols">
@@ -37,13 +45,13 @@
       <div class="actions actions--end"><button class="bh-btn bh-btn--primary" type="submit">Save {{ cat.is_fund|yesno:"fund,category" }}</button></div>
     </form>
     {% if not cat.is_income %}
-    <details style="margin-top:16px">
-      <summary class="small muted">Amount history</summary>
+    <details class="disclosure disclosure--ruled">
+      <summary>Amount history {% icon 'chevron-down' 20 %}</summary>
       <div class="list list--flat">
         {% for row in amounts %}
           <div class="setting">
-            <span class="grow">From {{ row.start_month|date:"F Y" }}</span>
-            <span class="setting__value">{% money row.amount %}</span>
+            <span class="grow"><span class="bh-when">{% icon 'calendar' 14 %}From {{ row.start_month|date:"M Y" }}</span></span>
+            <span class="bh-row__end"><span class="setting__value">{% money row.amount %}</span><span class="bh-row__detail">a month</span></span>
             {% if amounts|length > 1 %}
             <form method="post" action="{% url 'ledger:amount_delete' row.id %}">{% csrf_token %}<button class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--icon" aria-label="Remove this change">{% icon 'x' 16 %}</button></form>
             {% endif %}
@@ -52,7 +60,7 @@
       </div>
     </details>
     {% endif %}
-    <form method="post" action="{% url 'ledger:category_delete' cat.id %}" style="margin-top:16px">
+    <form method="post" action="{% url 'ledger:category_delete' cat.id %}" class="bh-card__foot">
       {% csrf_token %}
       <button class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--danger" type="submit">{% icon 'trash' 18 %} {% if recent %}Archive{% else %}Delete{% endif %} {{ cat.name }}</button>
     </form>

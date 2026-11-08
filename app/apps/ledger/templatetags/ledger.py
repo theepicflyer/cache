@@ -150,6 +150,17 @@ def spend_json(t):
 
 
 @register.filter
+def day(value):
+    """A date as the app shows it everywhere: ``Mon 9 Nov``, with the year when it isn't this year."""
+    from django.template.defaultfilters import date
+    from django.utils import timezone
+
+    if not value:
+        return ""
+    return date(value, "D j M" if value.year == timezone.localdate().year else "D j M Y")
+
+
+@register.filter
 def neg(value):
     return -value
 

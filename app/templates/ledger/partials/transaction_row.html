@@ -4,11 +4,14 @@
   <span class="spend__text">
     <span class="spend__title">{{ t.title }}</span>
     <span class="spend__sub">
-      <span>{{ t.category.name }}{% if show_date %} · {{ t.date|date:"j M" }}{% endif %}</span>
-      {% if t.counts_elsewhere %}<span class="tag">for {{ t.month|date:"M Y" }}</span>{% endif %}
+      <span>{{ t.category.name }}</span>
+      {% if t.counts_elsewhere %}<span class="bh-tag bh-tag--note">for {{ t.month|date:"M Y" }}</span>{% endif %}
       {% if t.recurring_id %}{% icon 'repeat' 14 'Recurring' %}{% endif %}
       {% if t.note %}{% icon 'note' 14 'Has a note' %}{% endif %}
     </span>
   </span>
-  <span class="spend__amount{% if t.is_income %} is-in{% endif %}">{% money t.amount signed=True type=t.type %}</span>
+  <span class="bh-row__end">
+    <span class="spend__amount{% if t.is_income %} is-in{% endif %}">{% money t.amount signed=True type=t.type %}</span>
+    {% if show_date %}<span class="bh-when">{% icon 'calendar' 14 %}{{ t.date|day }}</span>{% endif %}
+  </span>
 </button>

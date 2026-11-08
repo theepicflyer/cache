@@ -1,17 +1,18 @@
 {% load i18n %}
 {% load l10n %}
 {% load static %}
-<c-vars label="" value_text="" percent="0" over="" limit="" cap="acorn" class="" />
+<c-vars label="" value_text="" percent="0" over="" limit="" cap="acorn" class="" tag="" tag_class="" />
 {#
   Burrow Meter: a sticker track that fills to `percent` (0-100+, clamped) and ends in a trace.
   Going over is information, not failure: pass `limit` (budget as a % of spent) and the track
   rescales to the spend, with a tick at the budget and the overspend past it in tomato.
+  `tag` adds a Burrow Tag after the value (e.g. "over"); `tag_class` picks its tone (bh-tag--over; none is plain).
 #}
 <div class="bh-meter {% if over %}is-over{% endif %} {{ class }}" style="--pct: {{ percent|unlocalize }}%;{% if over and limit %} --limit: {{ limit|unlocalize }}%;{% endif %}">
   {% if label or value_text %}
     <div class="bh-meter__top">
       <span class="bh-meter__label">{{ label }}</span>
-      <span class="bh-meter__value">{{ value_text }}</span>
+      <span class="bh-meter__value">{{ value_text }}{% if tag %}<span class="bh-tag {{ tag_class }}">{{ tag }}</span>{% endif %}</span>
     </div>
   {% endif %}
   <div class="bh-meter__rail">

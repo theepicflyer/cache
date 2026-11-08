@@ -13,9 +13,9 @@
   <div class="form-grid form-grid--2">
     <div class="field span-2">
       <span class="field__label">Type</span>
-      <div class="seg" role="radiogroup" aria-label="Type">
-        <label><input type="radio" name="type" value="expense" {% if form.type.value != 'income' %}checked{% endif %}><span class="bh-chip">Expense</span></label>
-        <label><input type="radio" name="type" value="income" {% if form.type.value == 'income' %}checked{% endif %}><span class="bh-chip">Income</span></label>
+      <div class="bh-seg" role="radiogroup" aria-label="Type">
+        <label><input type="radio" name="type" value="expense" {% if form.type.value != 'income' %}checked{% endif %}><span class="bh-seg__opt">Expense</span></label>
+        <label><input type="radio" name="type" value="income" {% if form.type.value == 'income' %}checked{% endif %}><span class="bh-seg__opt">Income</span></label>
       </div>
     </div>
     <div class="field span-2 {% if form.title.errors %}has-error{% endif %}">

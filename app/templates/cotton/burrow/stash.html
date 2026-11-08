@@ -2,6 +2,7 @@
 {#
   Burrow Stash: a sinking fund as Kacang's buried acorn store.
   acorns = round(share of target * 15), e.g. {% widthratio balance target 15 %}; 0 or less shows an empty chamber.
+  Anything in the slot (Tags such as the monthly top-up) goes under the value, as in Burrow's Stash `tags`.
 #}
 <div class="bh-stash {{ class }}">
   <div class="bh-stash__art">{% with acorns=acorns|add:0 %}{% include "burrow/scenes/stash_art.html" %}{% endwith %}</div>
@@ -9,5 +10,6 @@
     <span class="bh-stash__name">{{ name }}</span>
     <span class="bh-stash__value">{{ value_text }}</span>
     {% if target_text %}<span class="bh-stash__target">{{ target_text }}</span>{% endif %}
+    {% if slot.strip %}<span class="bh-stash__tags">{{ slot }}</span>{% endif %}
   </div>
 </div>

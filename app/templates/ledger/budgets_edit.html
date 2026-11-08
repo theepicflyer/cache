@@ -19,10 +19,13 @@
   <div class="amount-rows">
     {% for r in rows %}
       <label class="amount-row {% if r.error %}has-error{% endif %}">
-        <span>
-          <span class="setting__title">{{ r.cat.name }}</span><br>
-          <span class="small muted">{% if r.cat.is_fund %}Fund top-up{% else %}Budget{% endif %}</span>
-          {% if r.error %}<br><span class="field__error">{{ r.error }}</span>{% endif %}
+        <span class="row">
+          {% category_tile r.cat %}
+          <span class="setting__text">
+            <span class="setting__title">{{ r.cat.name }}</span>
+            <span class="setting__sub">{% if r.cat.is_fund %}Fund top-up{% else %}Budget{% endif %}</span>
+            {% if r.error %}<span class="field__error">{{ r.error }}</span>{% endif %}
+          </span>
         </span>
         <span class="input input--affix">$<input name="amount_{{ r.cat.id }}" inputmode="decimal" value="{{ r.amount|floatformat:2 }}"></span>
       </label>

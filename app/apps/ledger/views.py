@@ -94,7 +94,6 @@ def history(request):
         "categories": Category.objects.all(),
         "months": [add_months(month_of(_today()), -i) for i in range(-1, 24)],
         "today": _today(),
-        "this_year": _today().year,
         "nav": "history",
     }
     if request.headers.get("HX-Request") and request.GET.get("page"):

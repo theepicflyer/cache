@@ -86,6 +86,8 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 .section-title { margin: 0; font: 600 19px/24px var(--font-display); color: var(--ink); }
 .bh-card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
 .bh-card__head .bh-card__title { margin: 0; }
+.bh-card__head--wrap { flex-wrap: wrap; align-items: flex-start; }
+/* A line explaining a card sits under its title, not loose in the body. */
 .card-link { font: 600 14px/20px var(--font-sans); color: var(--sky-text); text-decoration: none; }
 .card-link:hover { text-decoration: underline; }
 .center { display: grid; justify-items: center; }
@@ -99,7 +101,7 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 .bh-wreath-wrap { display: grid; place-items: center; padding: var(--space-2) 0; }
 .bh-ring__center .ring-big { font: 600 24px/30px var(--font-display); font-variant-numeric: tabular-nums; color: var(--ink); }
 .bh-ring__center .ring-small { max-width: 124px; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
-.pace { text-align: center; margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.pace { display: flex; justify-content: center; margin: var(--space-2) 0 0; }
 
 /* ---------- meters ---------- */
 .bh-meter__fill { width: clamp(0%, var(--pct, 0%), 100%); background: var(--accent); }
@@ -127,11 +129,15 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 .kpi__label { font: 600 12px/16px var(--font-sans); letter-spacing: .02em; color: var(--ink-muted); }
 .kpi__value { font: 600 22px/28px var(--font-display); font-variant-numeric: tabular-nums; color: var(--ink); }
 .kpi__sub { font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+/* When they wrap two to a row, an odd last one takes the whole row rather than sitting alone. */
+.kpis { container-type: inline-size; }
+@container (max-width: 473px) { .kpis > .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } }
 
 /* ---------- spend list ---------- */
-.day { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-4) 0 var(--space-2); padding: 0 var(--space-1); font: 600 16px/22px var(--font-display); }
+.day { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-4) 0 var(--space-2); padding: 0 var(--space-1); font: 600 16px/22px var(--font-display); }
 .day:first-child { margin-top: 0; }
-.day__line { flex: 1; height: 0; border-top: 2px dotted var(--line); }
+.day__line { flex: 1; height: 0; margin-left: var(--space-1); border-top: 2px dotted var(--line); }
+.day .bh-icon { flex: none; color: var(--ink-muted); }
 .day__total { font: 600 14px/20px var(--font-sans); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .list { padding: var(--space-1) var(--space-3); background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lift); }
 .list--flat { padding: 0; background: none; box-shadow: none; }
@@ -141,7 +147,7 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 .tile { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: var(--radius-sm); border: var(--border-sticker) solid var(--outline); background: var(--surface-sunk); color: var(--ink); font: 600 17px/1 var(--font-display); }
 .tile--fund { background: var(--mint-soft); }
 .tile--in { background: var(--mint-soft); }
-.tile--plan { border-style: dashed; border-color: var(--ink-muted); background: transparent; }
+.tile--off { opacity: .45; }
 .cat-icon { fill: currentColor; } /* the sprite's root fill does not reach an external <use> */
 .tile .cat-icon { display: block; }
 .page-title--icon { display: flex; align-items: center; gap: var(--space-3); }
@@ -167,7 +173,16 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 .spend__sub .bh-icon { width: 14px; height: 14px; vertical-align: -2px; }
 .spend__amount { font: 600 16px/22px var(--font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .spend__amount.is-in { color: var(--mint-text); }
-.tag { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: var(--radius-pill); background: var(--sunny-soft); color: var(--ink); font: 600 12px/20px var(--font-sans); }
+/* Every row has the same places: the category tile, then title over category, then amount over date. */
+.spend__freq { display: inline-flex; align-items: center; gap: 4px; }
+/* Dates (bh-when), pills (bh-tag, bh-tags, bh-facts), card subtitles and footers (bh-card__sub, bh-card__foot) and the
+ * row end (bh-row__end, bh-row__detail) come from Burrow; see its "Where information goes". */
+/* A <details> summary is a row with a chevron, not loose small print. */
+.disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-3) 0; list-style: none; cursor: pointer; font-weight: 600; }
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary .bh-icon { color: var(--ink-muted); transition: transform .2s; }
+.disclosure[open] > summary .bh-icon { transform: rotate(180deg); }
+.disclosure--ruled { margin-top: var(--space-3); border-top: var(--border-hair) solid var(--line); }
 .more { display: grid; justify-items: center; padding: var(--space-4) 0; }
 
 /* ---------- filters ---------- */
@@ -199,11 +214,8 @@ form:has(input[name=kind][value=income]:checked) .budget-only { display: none; }
 .bh-btn, a.bh-chip { text-decoration: none; }
 .bh-btn--block { width: 100%; }
 .bh-btn--danger { color: var(--tomato-text); }
-.seg { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.seg input { position: absolute; opacity: 0; pointer-events: none; }
-.seg label { cursor: pointer; }
-.seg input:checked + .bh-chip { background: var(--accent-soft); border-color: var(--outline); box-shadow: 0 2px 0 var(--outline); }
-.seg input:focus-visible + .bh-chip { outline: 3px solid var(--sky-text); outline-offset: 2px; }
+/* One-of-a-few switches are Burrow's Segmented (bh-seg, bh-seg__opt). */
+.seg-bar { max-width: 440px; margin-bottom: var(--space-4); }
 
 /* Budget editor table */
 .amount-rows { display: grid; }
@@ -216,7 +228,11 @@ form:has(input[name=kind][value=income]:checked) .budget-only { display: none; }
 .setting + .setting { border-top: var(--border-hair) solid var(--line); }
 a.setting:hover .setting__title { text-decoration: underline; }
 .setting__title { font-weight: 600; }
-.setting__value { color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.setting__value { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.setting__text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.setting__sub { font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.setting__text .bh-tags { margin-top: 2px; }
+.setting > .bh-icon:last-child { flex: none; color: var(--ink-muted); }
 .code { display: block; padding: var(--space-3); border-radius: var(--radius-sm); background: var(--surface-sunk); font: 400 14px/20px ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; user-select: all; }
 
 /* ---------- trends ---------- */
@@ -246,9 +262,7 @@ a.setting:hover .setting__title { text-decoration: underline; }
 .legend .l-spent::before { background: var(--mint); }
 .legend .l-spent-over::before { background: var(--tomato); }
 .legend .l-bark::before { background: var(--bark); }
-.flags { display: grid; gap: var(--space-3); }
-.flag { display: grid; gap: 2px; }
-.flag__title { font-weight: 600; }
+.legend .l-running::before { background: var(--mint); opacity: .35; }
 
 /* ---------- entry flow ----------
  * Full screen on phones, sized by JS to the part of the screen the keyboard leaves free
