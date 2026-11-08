@@ -68,7 +68,7 @@ class LedgerViewTests(TestCase):
         self.assertIn(f'<path d="{ICONS["calendar"]}"/></svg>{day(when)}</span>', home)
         self.assertNotIn('tile--plan', home)
         # A fund's monthly top-up is a pill, not loose text.
-        self.assertIn('<span class="tag tag--in">+$200.00 a month</span>', home)
+        self.assertIn('<span class="bh-tag bh-tag--in">+$200.00 a month</span>', home)
 
     def test_day_shows_the_year_only_when_it_is_not_this_year(self):
         self.assertEqual(day(date(self.today.year, 11, 9)), date(self.today.year, 11, 9).strftime("%a 9 Nov"))

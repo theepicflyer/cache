@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Burrow","components":[{"name":"Mascot"},{"name":"Habitat"},{"name":"Trace"},{"name":"Peek"},{"name":"Trail"},{"name":"TrailGap"},{"name":"TrailSteps"},{"name":"Tunnel"},{"name":"Breadcrumbs"},{"name":"Divider"},{"name":"Ring"},{"name":"Meter"},{"name":"Stash"},{"name":"Card"},{"name":"ListRow"},{"name":"BottomNav"},{"name":"Button"},{"name":"Chip"},{"name":"Field"},{"name":"Loader"},{"name":"EmptyState"},{"name":"Toast"},{"name":"Backdrop"},{"name":"Icon"},{"name":"World"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Burrow","components":[{"name":"Mascot"},{"name":"Habitat"},{"name":"Trace"},{"name":"Peek"},{"name":"Trail"},{"name":"TrailGap"},{"name":"TrailSteps"},{"name":"Tunnel"},{"name":"Breadcrumbs"},{"name":"Divider"},{"name":"Ring"},{"name":"Meter"},{"name":"Stash"},{"name":"Card"},{"name":"ListRow"},{"name":"Tag"},{"name":"When"},{"name":"BottomNav"},{"name":"Button"},{"name":"Chip"},{"name":"Segmented"},{"name":"Field"},{"name":"Loader"},{"name":"EmptyState"},{"name":"Toast"},{"name":"Backdrop"},{"name":"Icon"},{"name":"World"}]} */
 (function () {
   var React = window.React, h = React.createElement;
   /* ---------- the cast: one SVG string generator per animal, also used to export the asset SVGs ---------- */
@@ -333,13 +333,35 @@
     'arrow-up': 'M12 19 V5 M6 11 L12 5 L18 11',
     'arrow-down': 'M12 5 V19 M6 13 L12 19 L18 13',
     check: 'M5 12.5 L10 17.5 L19 7',
-    calendar: 'M5 6 H19 V20 H5 Z M5 10 H19 M9 3.5 V7.5 M15 3.5 V7.5'
+    calendar: 'M5 6 H19 V20 H5 Z M5 10 H19 M9 3.5 V7.5 M15 3.5 V7.5',
+    repeat: 'M4 12 V10 A4 4 0 0 1 8 6 H18 M15 3 L18 6 L15 9 M20 12 V14 A4 4 0 0 1 16 18 H6 M9 21 L6 18 L9 15'
   };
   function Icon(p) {
     var s = p.size || 24;
     return h('svg', { className: cx('bh-icon', p.className), width: s, height: s, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': p.label ? undefined : true, 'aria-label': p.label, role: p.label ? 'img' : undefined },
       h('path', { d: ICONS[p.name] || ICONS.plus }));
   }
+
+  /* ---------- facts: every fact has a place ---------- */
+  /* a short fact in a pill: a per-month amount, a status, a flag. tone: plain (default) | in | over | note */
+  function Tag(p) {
+    var lg = p.size === 'lg';
+    return h('span', { className: cx('bh-tag', p.tone && p.tone !== 'plain' && 'bh-tag--' + p.tone, lg && 'bh-tag--lg', p.className) },
+      p.icon ? h(Icon, { name: p.icon, size: lg ? 16 : 14 }) : null, p.children);
+  }
+  /* "Wed 22 Oct", with the year when it is not this year */
+  var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function formatDay(d, now) {
+    now = now || new Date();
+    var s = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+    return d.getFullYear() === now.getFullYear() ? s : s + ' ' + d.getFullYear();
+  }
+  /* a date, always with the calendar icon so it never reads as a count or a category */
+  function When(p) {
+    var text = p.children != null ? p.children : p.date instanceof Date ? formatDay(p.date) : p.date;
+    return h('span', { className: cx('bh-when', p.className) }, h(Icon, { name: 'calendar', size: 14 }), text);
+  }
+  function each(nodes) { return [].concat(nodes).filter(function (n) { return n != null && n !== false; }).map(function (n, i) { return h(React.Fragment, { key: i }, n); }); }
 
   /* ---------- controls ---------- */
   function Button(p) {
@@ -350,6 +372,15 @@
   function Chip(p) {
     return h('button', { type: 'button', className: cx('bh-chip', p.selected && 'is-selected', p.className), 'aria-pressed': !!p.selected, onClick: p.onClick },
       p.selected ? h(Icon, { name: 'check', size: 16 }) : null, p.children);
+  }
+  /* one of two to four fixed options: a type, a view, a span, the theme */
+  function Segmented(p) {
+    return h('div', { className: cx('bh-seg', p.className), role: 'radiogroup', 'aria-label': p.label },
+      (p.options || []).map(function (o, i) {
+        var v = o.value != null ? o.value : o.label, on = v === p.value;
+        return h('button', { key: i, type: 'button', role: 'radio', 'aria-checked': on, className: cx('bh-seg__opt', on && 'is-on'), onClick: p.onChange ? function () { p.onChange(v); } : undefined },
+          o.icon ? h(Icon, { name: o.icon, size: 16 }) : null, o.label);
+      }));
   }
   function Field(p) {
     var id = p.id || ('bh-f-' + String(p.label || '').replace(/\W+/g, '-').toLowerCase());
@@ -364,17 +395,24 @@
 
   /* ---------- containers ---------- */
   function Card(p) {
+    var title = h('h3', { className: 'bh-card__title' }, p.title);
     var card = h('section', { className: cx('bh-card', p.tint && 'bh-card--tint', p.nibbled && 'bh-card--nibbled', p.className) },
-      p.title || p.action ? h('header', { className: 'bh-card__head' }, h('h3', { className: 'bh-card__title' }, p.title), p.action || null) : null,
-      p.children);
+      p.title || p.action ? h('header', { className: 'bh-card__head' },
+        p.sub ? h('div', { className: 'bh-card__heading' }, title, h('p', { className: 'bh-card__sub' }, p.sub)) : title, p.action || null) : null,
+      p.children,
+      p.footer || p.total != null ? h('footer', { className: 'bh-card__foot' }, p.footer ? h('span', null, p.footer) : null,
+        p.total != null ? h('span', { className: 'bh-card__total' }, p.total) : null) : null);
     if (!p.nibbled) return card;
     return h('div', { className: 'bh-nibble' }, card, h(Trace, { name: 'crumbs', size: 26, className: 'bh-nibble__crumbs' }));
   }
   function ListRow(p) {
     return h('div', { className: cx('bh-row', p.className) },
       h('span', { className: 'bh-row__tile', style: p.tileColor ? { background: 'var(--' + p.tileColor + ')' } : null }, p.leading || (p.trace ? h(Trace, { name: p.trace, size: 30 }) : p.icon ? h(Icon, { name: p.icon, size: 22 }) : null)),
-      h('span', { className: 'bh-row__text' }, h('span', { className: 'bh-row__title' }, p.title), p.subtitle ? h('span', { className: 'bh-row__sub' }, p.subtitle) : null),
-      p.amount != null ? h('span', { className: cx('bh-row__amount', p.tone && 'is-' + p.tone) }, p.amount) : null);
+      h('span', { className: 'bh-row__text' }, h('span', { className: 'bh-row__title' }, p.title),
+        p.subtitle || p.tags ? h('span', { className: 'bh-row__sub' }, p.subtitle ? each(p.subtitle) : null, p.tags ? each(p.tags) : null) : null),
+      p.amount != null || p.date || p.detail ? h('span', { className: 'bh-row__end' },
+        p.amount != null ? h('span', { className: cx('bh-row__amount', p.tone && 'is-' + p.tone) }, p.amount) : null,
+        p.date ? h(When, { date: p.date }) : p.detail ? h('span', { className: 'bh-row__detail' }, p.detail) : null) : null);
   }
   function BottomNav(p) {
     var nav = h('nav', { className: 'bh-nav', 'aria-label': 'Main' },
@@ -393,7 +431,8 @@
     var over = (p.value || 0) > (p.max || 1);
     return h('div', { className: cx('bh-meter', over && 'is-over', p.className) },
       h('div', { className: 'bh-meter__top' }, h('span', { className: 'bh-meter__label' }, p.label),
-        h('span', { className: 'bh-meter__value' }, p.valueText || (p.value + ' / ' + p.max), over ? h('span', { className: 'bh-meter__over' }, ' over') : null)),
+        h('span', { className: 'bh-meter__value' }, p.valueText || (p.value + ' / ' + p.max),
+          p.tag ? h(Tag, { tone: p.tagTone || (over ? 'over' : 'plain') }, p.tag) : over ? h(Tag, { tone: 'over' }, 'over') : null)),
       h('div', { className: 'bh-meter__rail' },
         h('div', { className: 'bh-meter__track', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': p.max, 'aria-valuenow': p.value, 'aria-label': p.label },
           h('div', { className: 'bh-meter__fill', style: { width: (pct * 100) + '%', background: 'var(--' + (over ? 'tomato' : (p.color || 'accent')) + ')' } })),
@@ -440,7 +479,8 @@
       '<path class="hb-chamber" d="M26 108 C22 62 46 30 80 30 C114 30 138 62 134 108 Z"/>' + out +
       (n === 0 ? '<g transform="translate(64 80)">' + TRACES.footprint() + '</g>' : '') + '</svg>';
     return h('div', { className: cx('bh-stash', p.className) }, raw('div', 'bh-stash__art', svg),
-      h('div', { className: 'bh-stash__label' }, h('span', { className: 'bh-stash__name' }, p.name), h('span', { className: 'bh-stash__value' }, p.valueText), p.targetText ? h('span', { className: 'bh-stash__target' }, p.targetText) : null));
+      h('div', { className: 'bh-stash__label' }, h('span', { className: 'bh-stash__name' }, p.name), h('span', { className: 'bh-stash__value' }, p.valueText),
+        p.tags || p.targetText ? h('span', { className: 'bh-stash__tags' }, p.tags ? each(p.tags) : null, p.targetText ? h(Tag, null, p.targetText) : null) : null));
   }
 
   /* ---------- wayfinding: trails lead the eye to the next thing that matters ---------- */
@@ -488,7 +528,7 @@
           (last ? '' : '<path class="hb-tunnel" d="M32 40 C24 64 42 92 32 130 V600"/>') + prints +
           '<ellipse class="hb-chamber" cx="32" cy="24" rx="24" ry="17"/></svg>'),
         h('span', { className: 'bh-tunnel__day' }, h('span', { className: 'bh-tunnel__num' }, it.day), h('span', { className: 'bh-tunnel__mon' }, it.month)),
-        h('div', { className: 'bh-tunnel__body' }, it.title ? h('span', { className: 'bh-tunnel__title' }, it.title) : null, it.children));
+        h('div', { className: 'bh-tunnel__body' }, it.title || it.aside ? h('div', { className: 'bh-tunnel__head' }, h('span', { className: 'bh-tunnel__title' }, it.title), it.aside != null ? h('span', { className: 'bh-tunnel__aside' }, it.aside) : null) : null, it.children));
     }));
   }
   function Breadcrumbs(p) {
@@ -556,8 +596,8 @@
   function World(p) { return raw('div', cx('bh-world-wrap', p && p.className), worldSVG()); }
 
   window.Burrow = Object.assign(window.Burrow || {}, {
-    Mascot: Mascot, Habitat: Habitat, Trace: Trace, Peek: Peek, Trail: Trail, TrailGap: TrailGap, TrailSteps: TrailSteps, Tunnel: Tunnel, Breadcrumbs: Breadcrumbs, Divider: Divider, Ring: Ring, Meter: Meter, Stash: Stash, Card: Card, ListRow: ListRow,
-    BottomNav: BottomNav, Button: Button, Chip: Chip, Field: Field, Loader: Loader, EmptyState: EmptyState, Toast: Toast, Backdrop: Backdrop, Icon: Icon, World: World,
-    mascotSVG: mascotSVG, traceSVG: traceSVG, trailSVG: trailSVG, worldSVG: worldSVG, MOODS: MOODS
+    Mascot: Mascot, Habitat: Habitat, Trace: Trace, Peek: Peek, Trail: Trail, TrailGap: TrailGap, TrailSteps: TrailSteps, Tunnel: Tunnel, Breadcrumbs: Breadcrumbs, Divider: Divider, Ring: Ring, Meter: Meter, Stash: Stash, Card: Card, ListRow: ListRow, Tag: Tag, When: When,
+    BottomNav: BottomNav, Button: Button, Chip: Chip, Segmented: Segmented, Field: Field, Loader: Loader, EmptyState: EmptyState, Toast: Toast, Backdrop: Backdrop, Icon: Icon, World: World,
+    mascotSVG: mascotSVG, traceSVG: traceSVG, trailSVG: trailSVG, worldSVG: worldSVG, formatDay: formatDay, MOODS: MOODS
   });
 })();

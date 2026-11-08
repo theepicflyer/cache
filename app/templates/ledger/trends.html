@@ -17,10 +17,10 @@
   </p>
 </c-burrow.habitat>
 
-<nav class="seg seg--bar" aria-label="Months shown">
-  <a class="seg__opt {% if span == 6 %}is-on{% endif %}" href="?months=6&end={{ end|date:'Y-m' }}"{% if span == 6 %} aria-current="page"{% endif %}>6 months</a>
-  <a class="seg__opt {% if span == 12 %}is-on{% endif %}" href="?months=12&end={{ end|date:'Y-m' }}"{% if span == 12 %} aria-current="page"{% endif %}>12 months</a>
-  <a class="seg__opt {% if span == 24 %}is-on{% endif %}" href="?months=24&end={{ end|date:'Y-m' }}"{% if span == 24 %} aria-current="page"{% endif %}>24 months</a>
+<nav class="bh-seg seg-bar" aria-label="Months shown">
+  <a class="bh-seg__opt {% if span == 6 %}is-on{% endif %}" href="?months=6&end={{ end|date:'Y-m' }}"{% if span == 6 %} aria-current="page"{% endif %}>6 months</a>
+  <a class="bh-seg__opt {% if span == 12 %}is-on{% endif %}" href="?months=12&end={{ end|date:'Y-m' }}"{% if span == 12 %} aria-current="page"{% endif %}>12 months</a>
+  <a class="bh-seg__opt {% if span == 24 %}is-on{% endif %}" href="?months=24&end={{ end|date:'Y-m' }}"{% if span == 24 %} aria-current="page"{% endif %}>24 months</a>
 </nav>
 
 {% if not a.categories and not a.funds %}
@@ -55,9 +55,9 @@
 
   <section class="bh-card span-2" aria-labelledby="trend-title">
     <div class="bh-card__head bh-card__head--wrap">
-      <div>
+      <div class="bh-card__heading">
         <h2 class="bh-card__title section-title" id="trend-title">Spent against budget</h2>
-        {% if a.current %}<p class="card-sub">{{ a.current|date:"F" }} is still running, so it's faded and left out of the counts.</p>{% endif %}
+        {% if a.current %}<p class="bh-card__sub">{{ a.current|date:"F" }} is still running, so it's faded and left out of the counts.</p>{% endif %}
       </div>
       <span class="legend"><span class="l-spent">Spent</span><span class="l-spent-over">Spent, over</span><span class="l-budget">Budget</span>{% if a.current %}<span class="l-running">Running</span>{% endif %}</span>
     </div>
@@ -68,9 +68,9 @@
   {% if a.flagged %}
   <section class="bh-card" aria-labelledby="flag-title">
     <div class="bh-card__head">
-      <div>
+      <div class="bh-card__heading">
         <h2 class="bh-card__title section-title" id="flag-title">Over most months</h2>
-        <p class="card-sub">Average spent a month against the budget.</p>
+        <p class="bh-card__sub">Average spent a month against the budget.</p>
       </div>
     </div>
     <div class="list list--flat">
@@ -79,16 +79,16 @@
           {% category_tile t.category %}
           <span class="spend__text">
             <span class="spend__title">{{ t.category.name }}</span>
-            <span class="spend__sub"><span class="tag tag--over">Over in {{ t.months_over }} of {{ t.months_counted }} months</span></span>
+            <span class="spend__sub"><span class="bh-tag bh-tag--over">Over in {{ t.months_over }} of {{ t.months_counted }} months</span></span>
           </span>
-          <span class="row-end">
+          <span class="bh-row__end">
             <span class="spend__amount">{% money t.avg_spent %}</span>
-            <span class="row-end__unit">of {% money t.avg_budget %}{% if t.avg_percent %} ({{ t.avg_percent }}%){% endif %}</span>
+            <span class="bh-row__detail">of {% money t.avg_budget %}{% if t.avg_percent %} ({{ t.avg_percent }}%){% endif %}</span>
           </span>
         </a>
       {% endfor %}
     </div>
-    <div class="card-foot">
+    <div class="bh-card__foot">
       <span>Spend less in these, or set each budget nearer its average so it reflects reality.</span>
       <a class="bh-btn bh-btn--secondary bh-btn--sm" href="{% url 'ledger:budgets_edit' %}">{% icon 'pencil' 18 %} Edit budgets</a>
     </div>
@@ -103,7 +103,7 @@
           {% widthratio t.avg_budget t.avg_spent 100 as limit %}
           <c-burrow.meter label="{{ t.category.name }}" :percent="t.avg_pct" :over="t.avg_over" :limit="limit"
             value_text="{% money t.avg_spent %} / {% money t.avg_budget %}"
-            tag="{% if t.months_over %}over {{ t.months_over }}×{% endif %}" tag_class="{% if t.consistently_over %}tag--over{% else %}tag--plain{% endif %}" />
+            tag="{% if t.months_over %}over {{ t.months_over }}×{% endif %}" tag_class="{% if t.consistently_over %}bh-tag--over{% endif %}" />
         </a>
       {% endfor %}
     </div>
@@ -111,9 +111,9 @@
 
   <section class="bh-card span-2" aria-labelledby="heat-title">
     <div class="bh-card__head bh-card__head--wrap">
-      <div>
+      <div class="bh-card__heading">
         <h2 class="bh-card__title section-title" id="heat-title">Month by month</h2>
-        <p class="card-sub">Share of each month's budget spent. Tap a cell to see its spends.</p>
+        <p class="bh-card__sub">Share of each month's budget spent. Tap a cell to see its spends.</p>
       </div>
       <span class="legend"><span class="l-under">Under</span><span class="l-near">Within 10%</span><span class="l-over">Over</span><span class="l-partial">Running</span></span>
     </div>
@@ -175,13 +175,13 @@
           {% category_tile f.category %}
           <span class="setting__text">
             <span class="setting__title">{{ f.category.name }}</span>
-            <span class="tags">
-              <span class="tag tag--in">+{% money f.topup_now %} a month</span>
-              <span class="tag tag--plain">Spends {% money f.avg_spent %} a month</span>
-              {% if f.draining %}<span class="tag">More than goes in</span>{% endif %}
+            <span class="bh-tags">
+              <span class="bh-tag bh-tag--in">+{% money f.topup_now %} a month</span>
+              <span class="bh-tag">Spends {% money f.avg_spent %} a month</span>
+              {% if f.draining %}<span class="bh-tag bh-tag--note">More than goes in</span>{% endif %}
             </span>
           </span>
-          <span class="row-end"><span class="setting__value {% if f.balance_now < 0 %}over-text{% endif %}">{% money f.balance_now %}</span><span class="row-end__unit">saved</span></span>
+          <span class="bh-row__end"><span class="setting__value {% if f.balance_now < 0 %}over-text{% endif %}">{% money f.balance_now %}</span><span class="bh-row__detail">saved</span></span>
         </a>
       {% endfor %}
     </div>

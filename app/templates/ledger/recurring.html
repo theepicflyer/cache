@@ -5,9 +5,9 @@
 <c-burrow.habitat kind="river" mood="happy">
   <span class="bh-habitat__eyebrow"><a href="{% url 'ledger:settings' %}" style="color:inherit">Settings</a></span>
   <h1 class="page-title">Recurring</h1>
-  <div class="facts">
-    <span class="tag tag--plain">About {% money monthly_out %} a month out</span>
-    {% if monthly_in %}<span class="tag tag--in">{% money monthly_in %} a month in</span>{% endif %}
+  <div class="bh-facts">
+    <span class="bh-tag">About {% money monthly_out %} a month out</span>
+    {% if monthly_in %}<span class="bh-tag bh-tag--in">{% money monthly_in %} a month in</span>{% endif %}
   </div>
 </c-burrow.habitat>
 <div class="stack">
@@ -21,12 +21,12 @@
           <span class="spend__sub">
             <span>{{ r.category.name }}</span>
             <span class="spend__freq">{% icon 'repeat' 14 %}{{ r.frequency_label }}</span>
-            {% if r.month_offset %}<span class="tag">for the month before</span>{% endif %}
+            {% if r.month_offset %}<span class="bh-tag bh-tag--note">for the month before</span>{% endif %}
           </span>
         </span>
-        <span class="row-end">
+        <span class="bh-row__end">
           <span class="spend__amount{% if r.type == 'income' %} is-in{% endif %}">{% money r.amount signed=True type=r.type %}</span>
-          {% if r.paused %}<span class="tag tag--plain">Paused</span>{% elif r.next %}<span class="when">{% icon 'calendar' 14 %}{{ r.next|day }}</span>{% else %}<span class="tag tag--plain">Ended</span>{% endif %}
+          {% if r.paused %}<span class="bh-tag">Paused</span>{% elif r.next %}<span class="bh-when">{% icon 'calendar' 14 %}{{ r.next|day }}</span>{% else %}<span class="bh-tag">Ended</span>{% endif %}
         </span>
       </a>
     {% empty %}

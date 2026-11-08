@@ -6,10 +6,10 @@
   <span class="bh-habitat__eyebrow">Transactions</span>
   <h1 class="page-title">History</h1>
   {% if filtered %}
-    <div class="facts">
-      <span class="tag tag--plain">{{ count }} found</span>
-      {% if spent %}<span class="tag tag--plain">{% money spent %} out</span>{% endif %}
-      {% if received %}<span class="tag tag--in">{% money received %} in</span>{% endif %}
+    <div class="bh-facts">
+      <span class="bh-tag">{{ count }} found</span>
+      {% if spent %}<span class="bh-tag">{% money spent %} out</span>{% endif %}
+      {% if received %}<span class="bh-tag bh-tag--in">{% money received %} in</span>{% endif %}
     </div>
   {% else %}
     <p class="bh-habitat__sub">{{ count }} in all</p>
@@ -24,10 +24,10 @@
     <span class="sr-only">Search</span>
     <input type="search" name="q" value="{{ filters.q }}" placeholder="Search titles and notes" enterkeyhint="search">
   </label>
-  <div class="seg" role="radiogroup" aria-label="Type">
-    <label><input type="radio" name="type" value="" {% if not filters.type %}checked{% endif %}><span class="seg__opt">All</span></label>
-    <label><input type="radio" name="type" value="expense" {% if filters.type == 'expense' %}checked{% endif %}><span class="seg__opt">Expenses</span></label>
-    <label><input type="radio" name="type" value="income" {% if filters.type == 'income' %}checked{% endif %}><span class="seg__opt">Income</span></label>
+  <div class="bh-seg" role="radiogroup" aria-label="Type">
+    <label><input type="radio" name="type" value="" {% if not filters.type %}checked{% endif %}><span class="bh-seg__opt">All</span></label>
+    <label><input type="radio" name="type" value="expense" {% if filters.type == 'expense' %}checked{% endif %}><span class="bh-seg__opt">Expenses</span></label>
+    <label><input type="radio" name="type" value="income" {% if filters.type == 'income' %}checked{% endif %}><span class="bh-seg__opt">Income</span></label>
   </div>
   <div class="filters__row">
     <label><span class="sr-only">Month</span>

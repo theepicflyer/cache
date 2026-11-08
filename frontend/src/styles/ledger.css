@@ -88,10 +88,6 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 .bh-card__head .bh-card__title { margin: 0; }
 .bh-card__head--wrap { flex-wrap: wrap; align-items: flex-start; }
 /* A line explaining a card sits under its title, not loose in the body. */
-.card-sub { margin: 2px 0 0; font-size: 14px; line-height: 20px; color: var(--ink-muted); }
-/* A card's closing line (a total, a hint, an action) sits on its own ruled footer. */
-.card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-3); margin-top: var(--space-3); padding-top: var(--space-3); border-top: var(--border-hair) solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted); }
-.card-foot__value { font: 600 16px/22px var(--font-sans); color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .card-link { font: 600 14px/20px var(--font-sans); color: var(--sky-text); text-decoration: none; }
 .card-link:hover { text-decoration: underline; }
 .center { display: grid; justify-items: center; }
@@ -178,24 +174,9 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 .spend__amount { font: 600 16px/22px var(--font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .spend__amount.is-in { color: var(--mint-text); }
 /* Every row has the same places: the category tile, then title over category, then amount over date. */
-.row-end { flex: none; display: grid; justify-items: end; gap: 2px; text-align: right; }
-.row-end__unit { font-size: 13px; line-height: 18px; color: var(--ink-muted); white-space: nowrap; }
 .spend__freq { display: inline-flex; align-items: center; gap: 4px; }
-/* A date always carries the calendar icon, so it never reads as a count or a category. */
-.when { display: inline-flex; align-items: center; gap: 4px; font: 600 13px/18px var(--font-sans); color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.when .bh-icon { width: 14px; height: 14px; flex: none; }
-/* Small facts (per-month amounts, status, flags) are pills. Sunny: a heads-up; in: money coming in; over: past a limit; plain: neutral. */
-.tag { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: var(--radius-pill); background: var(--sunny-soft); color: var(--warning-text); font: 600 13px/22px var(--font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tag .bh-icon { width: 14px; height: 14px; flex: none; }
-.tag--in { background: var(--mint-soft); color: var(--mint-text); }
-.tag--over { background: var(--tomato-soft); color: var(--tomato-text); }
-.tag--plain { background: var(--surface-sunk); color: var(--ink); }
-.tag--lg { padding: 4px 12px; font-size: 14px; line-height: 20px; }
-.tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--space-2); }
-.facts .tag { background: var(--surface); } /* the scenery behind would swallow a tinted pill */
-.bh-stash__meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.bh-meter__value .tag { margin-left: 4px; vertical-align: 1px; }
+/* Dates (bh-when), pills (bh-tag, bh-tags, bh-facts), card subtitles and footers (bh-card__sub, bh-card__foot) and the
+ * row end (bh-row__end, bh-row__detail) come from Burrow; see its "Where information goes". */
 /* A <details> summary is a row with a chevron, not loose small print. */
 .disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-3) 0; list-style: none; cursor: pointer; font-weight: 600; }
 .disclosure > summary::-webkit-details-marker { display: none; }
@@ -233,15 +214,8 @@ form:has(input[name=kind][value=income]:checked) .budget-only { display: none; }
 .bh-btn, a.bh-chip { text-decoration: none; }
 .bh-btn--block { width: 100%; }
 .bh-btn--danger { color: var(--tomato-text); }
-/* One-of-a-few switches (type, theme, kind, span) all use the segmented track the entry flow uses. */
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 4px; border-radius: var(--radius-pill); background: var(--surface-sunk); }
-.seg > label { display: grid; cursor: pointer; }
-.seg input { position: absolute; opacity: 0; pointer-events: none; }
-.seg__opt { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 40px; padding: 0 8px; border-radius: var(--radius-pill); color: var(--ink-muted); font: 600 14px/20px var(--font-sans); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.seg__opt:hover { color: var(--ink); }
-.seg input:checked + .seg__opt, .seg__opt.is-on { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 2px var(--outline), 0 2px 0 var(--outline); }
-.seg input:focus-visible + .seg__opt { outline: 3px solid var(--sky-text); outline-offset: 2px; }
-.seg--bar { max-width: 440px; margin-bottom: var(--space-4); }
+/* One-of-a-few switches are Burrow's Segmented (bh-seg, bh-seg__opt). */
+.seg-bar { max-width: 440px; margin-bottom: var(--space-4); }
 
 /* Budget editor table */
 .amount-rows { display: grid; }
@@ -257,7 +231,7 @@ a.setting:hover .setting__title { text-decoration: underline; }
 .setting__value { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .setting__text { display: grid; gap: 2px; flex: 1; min-width: 0; }
 .setting__sub { font-size: 14px; line-height: 20px; color: var(--ink-muted); }
-.setting__text .tags { margin-top: 2px; }
+.setting__text .bh-tags { margin-top: 2px; }
 .setting > .bh-icon:last-child { flex: none; color: var(--ink-muted); }
 .code { display: block; padding: var(--space-3); border-radius: var(--radius-sm); background: var(--surface-sunk); font: 400 14px/20px ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; user-select: all; }
 
