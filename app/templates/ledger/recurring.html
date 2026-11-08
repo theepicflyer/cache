@@ -5,20 +5,29 @@
 <c-burrow.habitat kind="river" mood="happy">
   <span class="bh-habitat__eyebrow"><a href="{% url 'ledger:settings' %}" style="color:inherit">Settings</a></span>
   <h1 class="page-title">Recurring</h1>
-  <p class="bh-habitat__sub">About {% money monthly_out %} a month out{% if monthly_in %} · {% money monthly_in %} in{% endif %}</p>
+  <div class="facts">
+    <span class="tag tag--plain">About {% money monthly_out %} a month out</span>
+    {% if monthly_in %}<span class="tag tag--in">{% money monthly_in %} a month in</span>{% endif %}
+  </div>
 </c-burrow.habitat>
 <div class="stack">
   <div class="note">Each one adds a transaction on its date. Edits change every entry still to come; entries already added stay as they are.</div>
   <section class="bh-card">
     {% for r in rules %}
-      <a class="setting" href="{% url 'ledger:recurring_edit' r.id %}">
-        <span class="tile {% if r.paused or not r.next %}tile--plan{% endif %}" aria-hidden="true">{% icon 'repeat' 20 %}</span>
-        <span class="grow">
-          <span class="setting__title">{{ r.title }}</span><br>
-          <span class="small muted">{{ r.frequency_label }} · {{ r.category.name }}{% if r.month_offset %} · counts toward the month before{% endif %} ·
-            {% if r.paused %}paused{% elif r.next %}next {{ r.next|date:"j M" }}{% else %}ended{% endif %}</span>
+      <a class="spend" href="{% url 'ledger:recurring_edit' r.id %}">
+        {% if r.paused or not r.next %}{% category_tile r.category "tile--off" %}{% else %}{% category_tile r.category %}{% endif %}
+        <span class="spend__text">
+          <span class="spend__title">{{ r.title }}</span>
+          <span class="spend__sub">
+            <span>{{ r.category.name }}</span>
+            <span class="spend__freq">{% icon 'repeat' 14 %}{{ r.frequency_label }}</span>
+            {% if r.month_offset %}<span class="tag">for the month before</span>{% endif %}
+          </span>
         </span>
-        <span class="setting__value{% if r.type == 'income' %} in-text{% endif %}">{% money r.amount signed=True type=r.type %}</span>
+        <span class="row-end">
+          <span class="spend__amount{% if r.type == 'income' %} is-in{% endif %}">{% money r.amount signed=True type=r.type %}</span>
+          {% if r.paused %}<span class="tag tag--plain">Paused</span>{% elif r.next %}<span class="when">{% icon 'calendar' 14 %}{{ r.next|day }}</span>{% else %}<span class="tag tag--plain">Ended</span>{% endif %}
+        </span>
       </a>
     {% empty %}
       <c-ledger.empty who="" title="Nothing recurring yet">Add rent, bills, subscriptions or pay once and they appear on their own.</c-ledger.empty>

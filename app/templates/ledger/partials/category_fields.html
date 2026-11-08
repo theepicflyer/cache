@@ -9,9 +9,9 @@
 <div class="field">
   <span class="field__label">Kind</span>
   <div class="seg" role="radiogroup">
-    <label><input type="radio" name="kind" value="budget" {% if form.kind.value != 'fund' and form.kind.value != 'income' %}checked{% endif %}><span class="bh-chip">Budget</span></label>
-    <label><input type="radio" name="kind" value="fund" {% if form.kind.value == 'fund' %}checked{% endif %}><span class="bh-chip">Sinking fund</span></label>
-    <label><input type="radio" name="kind" value="income" {% if form.kind.value == 'income' %}checked{% endif %}><span class="bh-chip">Income</span></label>
+    <label><input type="radio" name="kind" value="budget" {% if form.kind.value != 'fund' and form.kind.value != 'income' %}checked{% endif %}><span class="seg__opt">Budget</span></label>
+    <label><input type="radio" name="kind" value="fund" {% if form.kind.value == 'fund' %}checked{% endif %}><span class="seg__opt">Sinking fund</span></label>
+    <label><input type="radio" name="kind" value="income" {% if form.kind.value == 'income' %}checked{% endif %}><span class="seg__opt">Income</span></label>
   </div>
   <span class="field__hint">A budget is what you plan to spend each month. A fund saves a set amount every month and you spend from what has built up. Income is money coming in, such as pay.</span>
 </div>

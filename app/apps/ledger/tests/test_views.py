@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.api.models import APIToken
 from apps.ledger.models import Category, Recurring, Transaction
 from apps.ledger.months import month_of
+from apps.ledger.templatetags.ledger import ICONS, day
 from apps.users.models import User
 
 
@@ -58,6 +59,21 @@ class LedgerViewTests(TestCase):
         self.assertContains(home, "$387.50 left")
         self.assertContains(home, 'id="ledger-entry"')
         self.assertContains(home, 'id="entry"')
+
+    def test_dates_and_monthly_amounts_have_their_own_places(self):
+        when = self.today + timedelta(days=3)
+        Recurring.objects.create(title="Rent", amount=D("1000"), category=self.food, start_date=when)
+        home = self.client.get(reverse("ledger:home")).content.decode()
+        # Coming up: the date sits under the amount with the calendar icon, apart from the category.
+        self.assertIn(f'<path d="{ICONS["calendar"]}"/></svg>{day(when)}</span>', home)
+        self.assertNotIn('tile--plan', home)
+        # A fund's monthly top-up is a pill, not loose text.
+        self.assertIn('<span class="tag tag--in">+$200.00 a month</span>', home)
+
+    def test_day_shows_the_year_only_when_it_is_not_this_year(self):
+        self.assertEqual(day(date(self.today.year, 11, 9)), date(self.today.year, 11, 9).strftime("%a 9 Nov"))
+        self.assertEqual(day(date(2020, 11, 9)), "Mon 9 Nov 2020")
+        self.assertEqual(day(None), "")
 
     def test_add_expense(self):
         resp = self.client.post(reverse("ledger:transaction_create"), {"amount": "12.50", "title": "", "category": self.food.id})

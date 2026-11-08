@@ -1,6 +1,6 @@
 {% load ledger %}
 {% for d, rows in days %}
-  <h2 class="day">{% if d == today %}Today{% else %}{{ d|date:"D j M" }}{% if d.year != this_year %} {{ d.year }}{% endif %}{% endif %}<span class="day__line" aria-hidden="true"></span></h2>
+  <h2 class="day">{% icon 'calendar' 16 %}{% if d == today %}Today{% else %}{{ d|day }}{% endif %}<span class="day__line" aria-hidden="true"></span></h2>
   <div class="list">
     {% for t in rows %}{% include "ledger/partials/transaction_row.html" %}{% endfor %}
   </div>

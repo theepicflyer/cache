@@ -18,7 +18,7 @@
       <a class="setting" href="{% url 'ledger:category' r.cat.id %}">
         {% category_tile r.cat %}
         <span class="grow setting__title">{{ r.cat.name }}</span>
-        <span class="setting__value">{% money r.amount %} a month</span>
+        <span class="row-end"><span class="setting__value">{% money r.amount %}</span><span class="row-end__unit">a month</span></span>
       </a>
     {% empty %}
       <p class="small muted">No budget categories yet.</p>
@@ -31,8 +31,8 @@
     {% for r in fund_rows %}
       <a class="setting" href="{% url 'ledger:category' r.cat.id %}">
         {% category_tile r.cat %}
-        <span class="grow"><span class="setting__title">{{ r.cat.name }}</span><br><span class="small muted">+{% money r.amount %} on the 1st of each month</span></span>
-        <span class="setting__value {% if r.balance < 0 %}over-text{% endif %}">{% money r.balance %}</span>
+        <span class="setting__text"><span class="setting__title">{{ r.cat.name }}</span><span class="tags"><span class="tag tag--in">+{% money r.amount %} a month</span></span></span>
+        <span class="row-end"><span class="setting__value {% if r.balance < 0 %}over-text{% endif %}">{% money r.balance %}</span><span class="row-end__unit">saved</span></span>
       </a>
     {% empty %}
       <p class="small muted">No funds yet. A fund grows by a set amount each month, for costs that come in lumps: car servicing, gifts, travel.</p>
@@ -57,14 +57,14 @@
   <section class="bh-card" aria-labelledby="rec-title">
     <a class="setting" href="{% url 'ledger:recurring' %}">
       <span class="tile" aria-hidden="true">{% icon 'repeat' 22 %}</span>
-      <span class="grow"><span class="setting__title" id="rec-title">Recurring</span><br><span class="small muted">{{ recurring_count }} active</span></span>
+      <span class="setting__text"><span class="setting__title" id="rec-title">Recurring</span><span class="setting__sub">{{ recurring_count }} active</span></span>
       {% icon 'chevron-right' 20 %}
     </a>
     {% if archived_rows %}
-      <details>
-        <summary class="small muted" style="padding:12px 0">Archived categories ({{ archived_rows|length }})</summary>
+      <details class="disclosure disclosure--ruled">
+        <summary>Archived categories ({{ archived_rows|length }}) {% icon 'chevron-down' 20 %}</summary>
         {% for r in archived_rows %}
-          <a class="setting" href="{% url 'ledger:category' r.cat.id %}"><span class="grow">{{ r.cat.name }}</span><span class="setting__value">{{ r.cat.get_kind_display }}</span></a>
+          <a class="setting" href="{% url 'ledger:category' r.cat.id %}">{% category_tile r.cat "tile--off" %}<span class="grow setting__title">{{ r.cat.name }}</span><span class="tag tag--plain">{{ r.cat.get_kind_display }}</span></a>
         {% endfor %}
       </details>
     {% endif %}
@@ -76,17 +76,21 @@
       <div class="field">
         <span class="field__label">Theme</span>
         <div class="seg" role="radiogroup" aria-label="Theme">
-          <label><input type="radio" name="theme" value="system"><span class="bh-chip">Match device</span></label>
-          <label><input type="radio" name="theme" value="light"><span class="bh-chip">{% icon 'sun' 16 %} Light</span></label>
-          <label><input type="radio" name="theme" value="dark"><span class="bh-chip">{% icon 'moon' 16 %} Dark</span></label>
+          <label><input type="radio" name="theme" value="system"><span class="seg__opt">Match device</span></label>
+          <label><input type="radio" name="theme" value="light"><span class="seg__opt">{% icon 'sun' 16 %} Light</span></label>
+          <label><input type="radio" name="theme" value="dark"><span class="seg__opt">{% icon 'moon' 16 %} Dark</span></label>
         </div>
       </div>
     </div>
   </section>
 
   <section class="bh-card" id="agents" aria-labelledby="agents-title">
-    <div class="bh-card__head"><h2 class="bh-card__title section-title" id="agents-title">Agents (MCP)</h2></div>
-    <p class="small muted" style="margin-top:0">Connect an AI agent to read your transactions and budgets. Add this URL as a custom connector; claude.ai signs in with your Cache login. Command-line clients can use a token instead.</p>
+    <div class="bh-card__head">
+      <div>
+        <h2 class="bh-card__title section-title" id="agents-title">Agents (MCP)</h2>
+        <p class="card-sub">Connect an AI agent to read your transactions and budgets. Add this URL as a custom connector; claude.ai signs in with your Cache login. Command-line clients can use a token instead.</p>
+      </div>
+    </div>
     <code class="code">{{ mcp_url }}</code>
     {% if new_token %}
       <div class="note note--tint" style="margin-top:12px">
@@ -96,8 +100,8 @@
     {% endif %}
     {% for t in tokens %}
       <div class="setting">
-        {% icon 'key' 20 %}
-        <span class="grow"><span class="setting__title">{{ t.name }}</span><br><span class="small muted">{{ t.get_scope_display }} · {% if t.last_used_at %}used {{ t.last_used_at|timesince }} ago{% else %}never used{% endif %}</span></span>
+        <span class="tile" aria-hidden="true">{% icon 'key' 20 %}</span>
+        <span class="setting__text"><span class="setting__title">{{ t.name }}</span><span class="tags"><span class="tag tag--plain">{{ t.get_scope_display }}</span><span class="tag tag--plain">{% if t.last_used_at %}Used {{ t.last_used_at|timesince }} ago{% else %}Never used{% endif %}</span></span></span>
         <form method="post" action="{% url 'ledger:token_delete' t.id %}">{% csrf_token %}<button class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--danger" type="submit">Revoke</button></form>
       </div>
     {% endfor %}
@@ -114,8 +118,12 @@
   </section>
 
   <section class="bh-card" aria-labelledby="acct-title">
-    <div class="bh-card__head"><h2 class="bh-card__title section-title" id="acct-title">Account</h2></div>
-    <p class="small muted" style="margin-top:0">Signed in as {{ request.user.email }}. Everyone who signs in shares one household ledger.</p>
+    <div class="bh-card__head">
+      <div>
+        <h2 class="bh-card__title section-title" id="acct-title">Account</h2>
+        <p class="card-sub">Signed in as {{ request.user.email }}. Everyone who signs in shares one household ledger.</p>
+      </div>
+    </div>
     <div class="actions">
       <form method="post" action="{% url 'ledger:logout' %}">{% csrf_token %}<button class="bh-btn bh-btn--secondary" type="submit">{% icon 'logout' 18 %} Sign out</button></form>
       <a class="bh-btn bh-btn--ghost bh-btn--sm" href="/legacy/">Old WYGIWYH screens</a>

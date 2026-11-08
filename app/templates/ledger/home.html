@@ -48,7 +48,11 @@
         </c-burrow.wreath>
       </div>
       {% if status.elapsed is not None %}
-        <p class="pace">{% if status.over %}Over budget this month.{% elif status.ahead_of_pace %}Spending is ahead of the month so far.{% else %}On pace for the month.{% endif %}</p>
+        <p class="pace">
+          {% if status.over %}<span class="tag tag--lg tag--over">{% icon 'arrow-up' 16 %} Over budget this month</span>
+          {% elif status.ahead_of_pace %}<span class="tag tag--lg">{% icon 'arrow-up' 16 %} Ahead of the month so far</span>
+          {% else %}<span class="tag tag--lg tag--in">{% icon 'check' 16 %} On pace for the month</span>{% endif %}
+        </p>
       {% endif %}
     </div>
 
@@ -62,7 +66,8 @@
           <a class="meter-link" href="{% url 'ledger:history' %}?category={{ b.category.id }}&month={{ month|date:'Y-m' }}">
             {% widthratio b.budget b.spent 100 as limit %}
             <c-burrow.meter label="{{ b.category.name }}" :percent="b.percent" :over="b.over" :limit="limit"
-              value_text="{% if b.spent < 0 %}{% money b.spent|neg %} back{% else %}{% money b.spent %}{% endif %} / {% money b.budget %}{% if b.over %} · over{% endif %}" />
+              value_text="{% if b.spent < 0 %}{% money b.spent|neg %} back{% else %}{% money b.spent %}{% endif %} / {% money b.budget %}"
+              tag="{% if b.over %}over{% endif %}" tag_class="tag--over" />
           </a>
         {% endfor %}
       </div>
@@ -85,7 +90,7 @@
       {% if status.incomes|length > 1 %}
       <div class="list list--flat" style="margin-top:8px">
         {% for i in status.incomes %}
-          <a class="setting" href="{% url 'ledger:category' i.category.id %}"><span class="grow">{{ i.category.name }}</span><span class="setting__value in-text">{% money i.received %}</span></a>
+          <a class="setting" href="{% url 'ledger:category' i.category.id %}">{% category_tile i.category %}<span class="grow setting__title">{{ i.category.name }}</span><span class="setting__value in-text">{% money i.received %}</span></a>
         {% endfor %}
       </div>
       {% endif %}
@@ -100,12 +105,16 @@
       <div class="stashes">
         {% for f in status.funds %}
           <a class="stash-link" href="{% url 'ledger:category' f.category.id %}">
-            <c-burrow.stash name="{{ f.category.name }}" value_text="{% money f.balance %}" :acorns="f.acorns" class="{% if f.balance < 0 %}is-negative{% endif %}"
-              target_text="{% if f.category.target %}of {% money f.category.target %}{% else %}+{% money f.topup %} a month{% endif %}" />
+            <c-burrow.stash name="{{ f.category.name }}" value_text="{% money f.balance %}" :acorns="f.acorns" class="{% if f.balance < 0 %}is-negative{% endif %}">
+              {% if f.topup %}<span class="tag tag--in">+{% money f.topup %} a month</span>{% endif %}
+              {% if f.category.target %}<span class="tag tag--plain">Target {% money f.category.target %}</span>{% endif %}
+            </c-burrow.stash>
           </a>
         {% endfor %}
       </div>
-      {% if status.fund_spent %}<p class="small muted" style="margin:12px 0 0">{% money status.fund_spent %} spent from funds in {{ month|date:"F" }}.</p>{% endif %}
+      {% if status.fund_spent %}
+        <div class="card-foot"><span>Spent from funds in {{ month|date:"F" }}</span><span class="card-foot__value">{% money status.fund_spent %}</span></div>
+      {% endif %}
     </section>
     {% endif %}
 
@@ -118,12 +127,15 @@
       <div class="list list--flat">
         {% for d, r in upcoming %}
           <a class="spend" href="{% url 'ledger:recurring_edit' r.id %}">
-            <span class="tile tile--plan" aria-hidden="true">{{ d|date:"j" }}</span>
+            {% category_tile r.category %}
             <span class="spend__text">
               <span class="spend__title">{{ r.title }}</span>
-              <span class="spend__sub">{{ d|date:"D j M" }} · {{ r.category.name }}</span>
+              <span class="spend__sub"><span>{{ r.category.name }}</span><span class="spend__freq">{% icon 'repeat' 14 %}{{ r.frequency_label }}</span></span>
             </span>
-            <span class="spend__amount{% if r.type == 'income' %} is-in{% endif %}">{% money r.amount signed=True type=r.type %}</span>
+            <span class="row-end">
+              <span class="spend__amount{% if r.type == 'income' %} is-in{% endif %}">{% money r.amount signed=True type=r.type %}</span>
+              <span class="when">{% icon 'calendar' 14 %}{{ d|day }}</span>
+            </span>
           </a>
         {% endfor %}
       </div>
