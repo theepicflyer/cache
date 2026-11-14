@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import (
@@ -25,7 +26,6 @@ from allauth.socialaccount.providers.openid_connect.views import login, callback
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
     path("__debug__/", include("debug_toolbar.urls")),
     path("__reload__/", include("django_browser_reload.urls")),
@@ -73,3 +73,6 @@ urlpatterns = [
         ),
     ),
 ]
+
+if settings.ADMIN_ENABLED:
+    urlpatterns.insert(0, path("admin/", admin.site.urls))

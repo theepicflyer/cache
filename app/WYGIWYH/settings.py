@@ -693,3 +693,5 @@ KEEP_DELETED_TRANSACTIONS_FOR = int(os.getenv("KEEP_DELETED_ENTRIES_FOR", "365")
 APP_VERSION = os.getenv("APP_VERSION", "unknown")
 DEMO = os.getenv("DEMO", "false").lower() == "true"
 HOUSEHOLD_MODE = os.getenv("HOUSEHOLD_MODE", "false").lower() == "true"
+# Off by default: Django admin has a password login with no rate limit.
+ADMIN_ENABLED = os.getenv("DJANGO_ADMIN_ENABLED", "false").lower() == "true"
