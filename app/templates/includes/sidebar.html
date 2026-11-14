@@ -237,12 +237,15 @@
               active="users_index"
               icon="fa-solid fa-users">
           </c-components.sidebar-menu-item>
-          <c-components.sidebar-menu-url-item
-              title="{% translate 'Django Admin' %}"
-              tooltip="{% translate "Only use this if you know what you're doing" %}"
-              url='/admin/'
-              icon="fa-solid fa-screwdriver-wrench">
-          </c-components.sidebar-menu-url-item>
+          {% settings "ADMIN_ENABLED" as admin_enabled %}
+          {% if admin_enabled %}
+            <c-components.sidebar-menu-url-item
+                title="{% translate 'Django Admin' %}"
+                tooltip="{% translate "Only use this if you know what you're doing" %}"
+                url='/admin/'
+                icon="fa-solid fa-screwdriver-wrench">
+            </c-components.sidebar-menu-url-item>
+          {% endif %}
         {% endif %}
       </c-components.sidebar-collapsible-panel>
     </ul>
