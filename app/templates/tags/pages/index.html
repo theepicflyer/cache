@@ -1,8 +1,0 @@
-{% extends "layouts/base.html" %}
-{% load i18n %}
-
-{% block title %}{% translate 'Tags' %}{% endblock %}
-
-{% block content %}
-<div hx-get="{% url 'tags_list' %}" hx-trigger="load" class="show-loading"></div>
-{% endblock %}

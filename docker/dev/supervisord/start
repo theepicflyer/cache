@@ -1,9 +1,0 @@
-#!/bin/bash
-
-set -o errexit
-set -o pipefail
-set -o nounset
-
-export TASK_WORKERS=${TASK_WORKERS:=1}
-
-exec supervisord -c /etc/supervisor/conf.d/supervisord.conf

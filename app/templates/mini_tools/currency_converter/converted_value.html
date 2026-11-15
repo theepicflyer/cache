@@ -1,9 +1,0 @@
-{% load decimal %}
-{% load currency_display %}
-{% load formats %}
-<input class="input input-bordered input-lg w-full mb-3"
-       type="text"
-       value="{{ converted_amount|localize_number:decimal_places|default:'-' }}"
-       name="to_value"
-       id="to_value"
-       disabled>

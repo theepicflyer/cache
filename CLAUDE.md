@@ -57,7 +57,8 @@ SvelteKit as a single-page app (adapter-static, `ssr = false`), Svelte 5 runes, 
 The UI follows Burrow, the household's design system. This is Cache, Kacang the squirrel's app (Burrow's "money"), so `--accent` is mint. Data stays calm, the animals live at the edges; at most one full-size animal per screen (the `Habitat` header's); in-card empty states use `Empty` with a small animal or none. Pick the animal by job (Kacang = home/budgets/trends, Gali = history/search, Kayu = settings/editing/errors) and the mood by moment.
 
 - Every fact has a fixed place (Burrow's "Where information goes"). List rows are category tile, then title over category, then amount over date. Dates in `bh-when` with the calendar icon (`Mon 9 Nov`, year added outside this year). Per-month amounts and short facts are `bh-tag` pills (`bh-tag--in`, `--over`, `--note`). A card's explanation goes in `bh-card__sub`, its total or action in `bh-card__foot`. One-of-a-few switches are `bh-seg`. Never facts joined with " · ".
-- Category icons are a curated set of Phosphor Icons (Bold, MIT) in `static/img/category-icons.svg`, drawn with `CategoryIcon`.
+- Burrow's sources are vendored in `web/burrow/` (`bundle.js`, `bundle.css`, `tokens.json`, copied from the design-system artifact). After updating them run `node web/burrow/generate.cjs`, which rewrites `lib/burrow/burrow.generated.css`, `static/img/burrow/**` and `lib/burrow/scenes/*`. Never hand-edit those outputs.
+- Category icons are a curated set of Phosphor Icons (Bold, MIT). Edit `web/icons/library.json` (groups, and the words in a category name that suggest an icon), then run `node web/icons/generate.cjs`, which writes `web/static/img/category-icons.svg`, `server/src/icons.json` and `web/src/lib/iconLibrary.json`. Draw them with `CategoryIcon`.
 - Copy: sentence case, verb + object buttons, no emoji; the animals carry the emotion.
 
 ## Releases and deploy
