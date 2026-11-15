@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { ApiError, del, get, patch, post, query } from '#lib/api.ts';
-	import { amountText, month, plural } from '#lib/format.ts';
+	import { month, plural } from '#lib/format.ts';
 	import { ledger, toasts } from '#lib/state.svelte.ts';
 	import type { Category, EntryData, Rule, Saved, TxnType, Unit } from '#lib/types.ts';
 	import { onMount } from 'svelte';
@@ -17,7 +17,7 @@
 	const start = (() => rule)();
 	let type = $state<TxnType>(start?.type ?? 'expense');
 	let title = $state(start?.title ?? '');
-	let amount = $state(start ? amountText(start.amount) : '');
+	let amount = $state(start ? (start.amount / 100).toFixed(2) : '');
 	let category = $state(start ? String(start.category_id) : '');
 	let every = $state(start?.every ?? 1);
 	let unit = $state<Unit>(start?.unit ?? 'month');
@@ -48,7 +48,7 @@
 	const nextText = (d: string) => `Next on ${Number(d.slice(8, 10))} ${month(d, 'name')}`;
 
 	async function done(res: Saved & { created?: number }) {
-		toasts.show(res.created ? `${res.toast} · ${plural(res.created, 'entry', 'entries')} added` : res.toast);
+		toasts.show(res.created ? `${res.toast}. ${plural(res.created, 'entry', 'entries')} added.` : res.toast);
 		// Leave first: announcing the change while this page is up reloads a rule that may be deleted.
 		await goto('/recurring');
 		ledger.changed();
