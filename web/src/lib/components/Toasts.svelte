@@ -17,8 +17,10 @@
 						type="button"
 						class="bh-btn bh-btn--ghost bh-btn--sm"
 						onclick={() => {
+							// read it before dismissing: `action` is derived from the toast, which dismiss clears
+							const run = action.run;
 							toasts.dismiss();
-							action.run();
+							run();
 						}}>{action.label}</button
 					>
 				{/if}

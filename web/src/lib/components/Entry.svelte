@@ -274,6 +274,7 @@
 	// ---------- open / close
 	function start(txn: Txn | null) {
 		s = draft(txn, today);
+		if (!txn && entry.category) s.category = entry.category;
 		trail = [];
 		page = 'amount';
 		error = '';

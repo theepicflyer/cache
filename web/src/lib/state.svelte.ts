@@ -62,13 +62,18 @@ class Ledger {
 }
 export const ledger = new Ledger();
 
-/** The add/edit flow, on every page. `add()` opens it empty, `edit(txn)` opens it on the review page. */
+/**
+ * The add/edit flow, on every page. `add()` opens it empty (or with a category chosen, which skips
+ * the category page), `edit(txn)` opens it on the review page.
+ */
 class EntryFlow {
 	open = $state(false);
 	editing = $state<Txn | null>(null);
+	category = $state<number | null>(null);
 
-	add(): void {
+	add(category: number | null = null): void {
 		this.editing = null;
+		this.category = category;
 		this.open = true;
 	}
 	edit(txn: Txn): void {
