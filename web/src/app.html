@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" data-theme="wygiwyh_dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual" />
+		<script>
+			// Set the theme before first paint: "system" (default) follows the device; "light"/"dark" stick.
+			(function () {
+				var c = 'system';
+				try {
+					c = localStorage.getItem('burrow-theme') || 'system';
+				} catch (e) {}
+				var dark = c === 'dark' || (c !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+				document.documentElement.dataset.theme = dark ? 'wygiwyh_dark' : 'wygiwyh_light';
+			})();
+		</script>
+		<meta name="theme-color" content="#fff7ea" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#1d1828" media="(prefers-color-scheme: dark)" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-title" content="Cache" />
+		<meta name="description" content="Household spending, budgets and sinking funds" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
+		<link rel="icon" href="/icons/android-icon-192x192.png" sizes="192x192" type="image/png" />
+		<link rel="apple-touch-icon" href="/icons/apple-icon-180x180.png" />
+		<title>Cache</title>
+		%sveltekit.head%
+	</head>
+	<body class="bh-app bh-app--money" data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>
