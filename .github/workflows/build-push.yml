@@ -53,7 +53,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/prod/django/Dockerfile
+          file: ./Dockerfile
           push: true
           provenance: false
           tags: ${{ inputs.image_tags }}
