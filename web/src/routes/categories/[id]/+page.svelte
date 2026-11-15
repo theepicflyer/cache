@@ -87,13 +87,15 @@
 		if (!cat) return;
 		try {
 			const res = await del<{ toast: string; result: 'archived' | 'deleted' }>(`/api/categories/${cat.id}`);
-			ledger.changed();
 			if (res.result === 'archived') {
+				ledger.changed();
 				// Archiving instead of deleting is a heads-up, so it is Kayu's worried toast like the old error message.
 				toasts.show(res.toast, { who: 'kayu', mood: 'worried' });
 			} else {
-				toasts.show(res.toast);
+				// Leave first: reloading this page now would ask for a category that no longer exists.
 				await goto('/settings');
+				ledger.changed();
+				toasts.show(res.toast);
 			}
 		} catch (err) {
 			toasts.error(err);
@@ -128,7 +130,7 @@
 				<h2 class="bh-card__title section-title" id="hist-title">
 					{cat.kind === 'income' ? 'Received' : cat.kind === 'fund' ? 'Balance' : 'Spent against budget'}, last 12 months
 				</h2>
-				<button type="button" class="bh-btn bh-btn--secondary bh-btn--sm" onclick={() => entry.add()}><Icon name="plus" size={18} /> Add</button>
+				<button type="button" class="bh-btn bh-btn--secondary bh-btn--sm" onclick={() => entry.add(cat.id)}><Icon name="plus" size={18} /> Add</button>
 			</div>
 			{#if cat.kind === 'budget'}<div class="legend" style="margin-bottom:8px"><span class="l-spent">Spent</span><span class="l-spent-over">Spent, over</span><span class="l-budget">Budget</span></div>{/if}
 			<Chart data={chart} label="History" small />
