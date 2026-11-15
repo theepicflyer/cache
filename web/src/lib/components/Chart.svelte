@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { draw, type ChartData } from '#lib/charts.ts';
+	import { still } from '#lib/motion.svelte.ts';
 
 	/**
 	 * A chart in a `chart-box`. It redraws when its data changes and when the theme does, because
@@ -15,11 +16,16 @@
 		return () => observer.disconnect();
 	});
 
+	/** Only the first drawing animates, and not on a screen gone back to. */
+	let first = !still();
+
 	$effect(() => {
 		void theme;
 		let stale = false;
 		let chart: { destroy(): void } | undefined;
-		draw(canvas, data).then((drawn) => {
+		const animate = first;
+		first = false;
+		draw(canvas, data, animate).then((drawn) => {
 			if (stale) drawn.destroy();
 			else chart = drawn;
 		});

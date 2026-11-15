@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { ApiError, del, get, patch, post, query } from '#lib/api.ts';
+	import { ApiError, changes, del, get, patch, post, query } from 'warren/web';
 	import { month, plural } from '#lib/format.ts';
-	import { ledger, toasts } from '#lib/state.svelte.ts';
+	import { toasts } from '#lib/state.svelte.ts';
 	import type { Category, EntryData, Rule, Saved, TxnType, Unit } from '#lib/types.ts';
 	import { onMount } from 'svelte';
 	import Habitat from './Habitat.svelte';
@@ -51,7 +51,7 @@
 		toasts.show(res.created ? `${res.toast}. ${plural(res.created, 'entry', 'entries')} added.` : res.toast);
 		// Leave first: announcing the change while this page is up reloads a rule that may be deleted.
 		await goto('/recurring');
-		ledger.changed();
+		changes.changed();
 	}
 
 	async function save(e: SubmitEvent) {
@@ -164,18 +164,18 @@
 	</div>
 	{#if rule}<p class="note">Saving changes every entry still to come. Entries already added stay as they are; edit those on the History page.</p>{/if}
 	<div class="actions actions--end">
-		<a class="bh-btn bh-btn--ghost" href="/recurring">Cancel</a>
-		<button class="bh-btn bh-btn--primary" type="submit" disabled={busy}>{rule ? 'Save changes' : 'Add recurring'}</button>
+		<a class="bh-btn bh-btn--ghost wn-press" href="/recurring">Cancel</a>
+		<button class="bh-btn bh-btn--primary wn-press" type="submit" disabled={busy}>{rule ? 'Save changes' : 'Add recurring'}</button>
 	</div>
 </form>
 
 {#if rule}
 	{@const id = rule.id}
 	<div class="actions" style="margin-top:16px">
-		<button class="bh-btn bh-btn--secondary bh-btn--sm" type="button" disabled={busy} onclick={() => act(() => post(`/api/recurring/${id}/toggle`))}>
+		<button class="bh-btn bh-btn--secondary bh-btn--sm wn-press" type="button" disabled={busy} onclick={() => act(() => post(`/api/recurring/${id}/toggle`))}>
 			{#if rule.paused}<Icon name="play" size={18} /> Resume{:else}<Icon name="pause" size={18} /> Pause{/if}
 		</button>
-		<button class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--danger" type="button" disabled={busy} onclick={() => act(() => del(`/api/recurring/${id}`))}><Icon name="trash" size={18} /> Delete</button>
-		<a class="bh-btn bh-btn--ghost bh-btn--sm" href="/history{query({ q: rule.title })}">Past entries</a>
+		<button class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--danger wn-press" type="button" disabled={busy} onclick={() => act(() => del(`/api/recurring/${id}`))}><Icon name="trash" size={18} /> Delete</button>
+		<a class="bh-btn bh-btn--ghost bh-btn--sm wn-press" href="/history{query({ q: rule.title })}">Past entries</a>
 	</div>
 {/if}

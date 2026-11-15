@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { ApiError, post } from '#lib/api.ts';
+	import { ApiError, changes, post } from 'warren/web';
 	import CategoryForm, { type CategoryValues } from '#lib/components/CategoryForm.svelte';
 	import Habitat from '#lib/components/Habitat.svelte';
-	import { ledger, toasts } from '#lib/state.svelte.ts';
+	import { toasts } from '#lib/state.svelte.ts';
 	import type { Kind } from '#lib/types.ts';
 
 	const asked = page.url.searchParams.get('kind');
@@ -28,7 +28,7 @@
 		try {
 			const res = await post<{ toast: string }>('/api/categories', values);
 			toasts.show(res.toast);
-			ledger.changed();
+			changes.changed();
 			await goto('/settings');
 		} catch (err) {
 			if (err instanceof ApiError && Object.keys(err.errors).length) errors = err.errors;
@@ -48,7 +48,7 @@
 <form class="bh-card form-grid" onsubmit={submit}>
 	<CategoryForm bind:values {errors} />
 	<div class="actions actions--end">
-		<a class="bh-btn bh-btn--ghost" href="/settings">Cancel</a>
-		<button class="bh-btn bh-btn--primary" type="submit" disabled={saving}>Add category</button>
+		<a class="bh-btn bh-btn--ghost wn-press" href="/settings">Cancel</a>
+		<button class="bh-btn bh-btn--primary wn-press" type="submit" disabled={saving}>Add category</button>
 	</div>
 </form>

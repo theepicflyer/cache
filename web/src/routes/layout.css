@@ -17,7 +17,7 @@ a { color: var(--sky-text); }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; }
 button { font: inherit; color: inherit; }
 img.bh-mascot, img.bh-trace { display: inline-block; flex: none; }
-img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+img.bh-mascot--bounce { transform-origin: 50% 100%; } /* its bounce is in the motion section */
 :where(a, button, summary, select, input, textarea, [tabindex]):focus-visible { outline: 3px solid var(--sky-text); outline-offset: 2px; }
 /* Inputs inside a box: the box draws the focus ring. */
 :is(.bh-field__box, .amount-box, .input--affix) input:focus-visible, .input:focus-visible, .select:focus-visible, .textarea:focus-visible { outline: none; }
@@ -31,7 +31,7 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 [hidden] { display: none !important; }
 
 /* ---------- shell ---------- */
-.shell { display: block; }
+.shell { display: block; overflow-x: clip; } /* a screen swiped back past the edge doesn't widen the page */
 .page { width: 100%; max-width: 720px; margin: 0 auto; padding: var(--space-4) var(--space-4) 132px; }
 .page--wide { max-width: 1180px; }
 .rail { display: none; }
@@ -46,6 +46,8 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 .rail__link { display: flex; align-items: center; gap: var(--space-3); min-height: 44px; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-muted); text-decoration: none; font: 600 15px/20px var(--font-sans); }
 .rail__link:hover { background: var(--surface-sunk); color: var(--ink); }
 .rail__link.is-active { background: var(--accent-soft); color: var(--ink); }
+.rail__links { display: grid; gap: var(--space-2); }
+.rail__hl { position: absolute; inset: 0; border-radius: var(--radius-pill); pointer-events: none; }
 .rail__add { margin: var(--space-4) 0; }
 .rail__foot { margin-top: auto; }
 
@@ -135,14 +137,14 @@ img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; transfor
 
 /* ---------- spend list ---------- */
 .day { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-4) 0 var(--space-2); padding: 0 var(--space-1); font: 600 16px/22px var(--font-display); }
-.day:first-child { margin-top: 0; }
+.chunk:first-child > .day-group:first-child > .day { margin-top: 0; }
 .day__line { flex: 1; height: 0; margin-left: var(--space-1); border-top: 2px dotted var(--line); }
 .day .bh-icon { flex: none; color: var(--ink-muted); }
 .day__total { font: 600 14px/20px var(--font-sans); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .list { padding: var(--space-1) var(--space-3); background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lift); }
 .list--flat { padding: 0; background: none; box-shadow: none; }
 .spend { display: flex; align-items: center; gap: var(--space-3); width: 100%; padding: var(--space-3) 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; text-decoration: none; }
-.spend + .spend { border-top: var(--border-hair) solid var(--line); }
+.spend + .spend, .txn + .txn > .spend { border-top: var(--border-hair) solid var(--line); }
 .spend:hover .spend__title { text-decoration: underline; text-decoration-color: var(--line); }
 .tile { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: var(--radius-sm); border: var(--border-sticker) solid var(--outline); background: var(--surface-sunk); color: var(--ink); font: 600 17px/1 var(--font-display); }
 .tile--fund { background: var(--mint-soft); }
@@ -283,14 +285,16 @@ html.entry-open, html.entry-open body { overflow: hidden; }
 .entry__icon { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: var(--ink); cursor: pointer; }
 .entry__icon:hover { background: var(--surface-sunk); }
 .entry__dots { display: flex; gap: 6px; }
+/* The grab handle: the middle of the header, a bar along its top on phones. Pull it down to close. */
+.entry__grab { flex: 1; align-self: stretch; position: relative; display: grid; place-items: center; touch-action: none; cursor: grab; }
+.entry__grab::before { content: ''; position: absolute; top: 0; left: 50%; width: 36px; height: 5px; margin-left: -18px; border-radius: var(--radius-pill); background: var(--line); }
+@media (min-width: 640px) { .entry__grab { cursor: auto; } .entry__grab::before { display: none; } }
 .entry__dots span { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--line); transition: width .25s cubic-bezier(.34, 1.56, .64, 1), background .2s; }
 .entry__dots span.is-on { width: 22px; background: var(--accent); }
 .entry__dots span.is-done { background: var(--ink-muted); }
 .entry__summary { flex: none; display: flex; gap: var(--space-2); padding: 0 var(--space-4) var(--space-2); overflow: hidden; }
 .entry__summary .bh-chip { max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; line-height: 30px; }
 .entry__page { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 var(--space-4); }
-.entry__page.is-in { animation: entry-in .22s cubic-bezier(.22, .61, .36, 1); }
-@keyframes entry-in { from { transform: translateX(16px); opacity: 0; } }
 .entry__q { flex: none; margin: var(--space-2) 0 var(--space-3); font: 600 24px/30px var(--font-display); }
 .entry__hint { flex: none; margin: calc(-1 * var(--space-2)) 0 var(--space-3); font-size: 14px; line-height: 20px; color: var(--ink-muted); }
 .entry__scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 calc(-1 * var(--space-4)); padding: 2px var(--space-4) var(--space-4); }
@@ -375,6 +379,15 @@ html.entry-open, html.entry-open body { overflow: hidden; }
 .toasts { position: fixed; left: 0; right: 0; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 70; display: grid; justify-items: center; gap: var(--space-2); padding: 0 var(--space-4); pointer-events: none; }
 @media (min-width: 1024px) { .toasts { bottom: var(--space-6); } }
 .bh-toast { pointer-events: auto; max-width: min(460px, 100%); }
+/* One at a time: the leaving toast and the arriving one share the spot. Svelte transitions move them (Toasts.svelte). */
+.toasts > .bh-toast { grid-area: 1 / 1; animation: none; }
+
+/* ---------- skeleton (while a screen's data is on its way) ---------- */
+.skeleton { display: grid; gap: var(--space-4); }
+.skeleton__band { min-height: 184px; border-radius: var(--radius-lg); background: var(--surface-sunk); }
+.skeleton__cards { display: grid; gap: var(--space-4); align-items: start; }
+.skeleton__card { border-radius: var(--radius-lg); background: var(--surface-sunk); }
+@media (min-width: 1024px) { .page--wide .skeleton__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .bh-toast .bh-btn--ghost { color: var(--paper); }
 
 /* ---------- login ---------- */
@@ -387,6 +400,123 @@ html.entry-open, html.entry-open body { overflow: hidden; }
 .setting__value.over-text, .kpi__value.over-text, .heat__sum.over-text, .bh-stash__value.over-text { color: var(--tomato-text); }
 .setting__value.in-text, .kpi__value.in-text, .spend__amount.in-text { color: var(--mint-text); }
 
-@media (prefers-reduced-motion: reduce) {
-  img.bh-mascot--bounce, .entry__page.is-in { animation: none; }
+/* ---------- motion ----------
+ * Native-app motion. warren/web/motion.css (imported in +layout.svelte) changes screens with a view
+ * transition keyed on html[data-nav] (pageTransition), holds the nav and rail still while it does
+ * (data-wn-keep), and gives .wn-press its spring under the finger. Here: a screen's cards rise in one
+ * after another, meters fill from empty, the wreath's leaves light up in turn, acorns drop into the
+ * stashes, the nav's highlight slides, and the habitats have a little life in them. Charts grow on
+ * their first drawing (charts.ts), headline amounts count (Money.svelte), and things added, removed or
+ * swapped later use warren/web's transitions. A screen gone back to is drawn as it was left: the
+ * layout marks main with .is-back and nothing on it plays its entrance. Everything that moves sits
+ * behind no-preference: reduced motion gets none of it. */
+
+/* The nav's highlight is one blob that slides between items (slidingPill); the items' own go. */
+.wn-pill-blob { border-radius: var(--radius-pill); background: var(--accent-soft); }
+.has-blob .bh-nav__item.is-active .bh-nav__pill, .has-blob .rail__link.is-active { background: none; }
+
+/* How far into a list of cards each one is, for rising in one after another. */
+:is(.page, .cols, .stack) > :nth-child(2) { --n: 1; }
+:is(.page, .cols, .stack) > :nth-child(3) { --n: 2; }
+:is(.page, .cols, .stack) > :nth-child(4) { --n: 3; }
+:is(.page, .cols, .stack) > :nth-child(5) { --n: 4; }
+:is(.page, .cols, .stack) > :nth-child(6) { --n: 5; }
+:is(.page, .cols, .stack) > :nth-child(n + 7) { --n: 6; }
+/* Cards in columns start after the header; the second column after the first column's first cards. */
+.page :is(.cols, .stack) { --rise-at: 80ms; }
+.cols > .stack:nth-child(2) { --rise-at: 200ms; }
+/* Which acorn of a stash it is, for dropping in one after another. */
+.bh-stash__art svg > g:nth-of-type(2) { --a: 1; }
+.bh-stash__art svg > g:nth-of-type(3) { --a: 2; }
+.bh-stash__art svg > g:nth-of-type(4) { --a: 3; }
+.bh-stash__art svg > g:nth-of-type(5) { --a: 4; }
+.bh-stash__art svg > g:nth-of-type(6) { --a: 5; }
+.bh-stash__art svg > g:nth-of-type(7) { --a: 6; }
+.bh-stash__art svg > g:nth-of-type(8) { --a: 7; }
+.bh-stash__art svg > g:nth-of-type(9) { --a: 8; }
+.bh-stash__art svg > g:nth-of-type(10) { --a: 9; }
+.bh-stash__art svg > g:nth-of-type(11) { --a: 10; }
+.bh-stash__art svg > g:nth-of-type(12) { --a: 11; }
+.bh-stash__art svg > g:nth-of-type(13) { --a: 12; }
+.bh-stash__art svg > g:nth-of-type(14) { --a: 13; }
+.bh-stash__art svg > g:nth-of-type(15) { --a: 14; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A screen's header and cards rise in, one after another; a column's cards rather than the column. */
+  .page:not(.is-back) > :not(.cols, .stack, .skeleton),
+  .page:not(.is-back) :is(.cols, .stack) > :not(.cols, .stack) {
+    animation: c-rise .5s var(--wn-spring) backwards;
+    animation-delay: calc(var(--rise-at, 0ms) + var(--n, 0) * 60ms);
+  }
+  /* The skeleton shows only if the wait is long enough to notice. */
+  .skeleton { animation: c-fade .3s ease .15s backwards; }
+
+  /* Meters fill from empty. */
+  @starting-style {
+    .page:not(.is-back) .bh-meter .bh-meter__fill { width: 0; }
+    .page:not(.is-back) .bh-meter .bh-meter__cap { left: 0; }
+  }
+  .bh-meter__fill, .bh-meter__cap { transition-duration: .7s; }
+
+  /* The month's wreath turns in, then its leaves light up one after another round to the share spent. */
+  .page:not(.is-back) .bh-ring--wreath > svg { animation: c-bloom .8s var(--wn-spring) backwards; }
+  .bh-wleaf { transition: fill .3s ease calc(250ms + var(--i, 0) * 28ms); }
+  @starting-style {
+    .page:not(.is-back) .bh-wleaf.is-on { fill: var(--mint-soft); }
+  }
+
+  /* Acorns drop into a fund's stash, one after another. */
+  .page:not(.is-back) .bh-stash__art svg > g { animation: c-drop .55s var(--wn-spring) backwards; animation-delay: calc(300ms + var(--a, 0) * 45ms); }
+
+  /* Empty states: the animal pops up. */
+  .page:not(.is-back) .bh-empty > :first-child { animation: c-pop .5s var(--wn-spring) backwards; }
+
+  /* Habitats: clouds drift, grass sways, water ripples, and the resident bounces (and hops when it
+     arrives or its mood changes, which draws it again). */
+  img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; }
+  .page:not(.is-back) .bh-habitat__resident .bh-mascot { animation: c-hop .55s var(--wn-spring), bh-bounce 2.4s ease-in-out .55s infinite; }
+  .hb-cloud { animation: c-drift 26s ease-in-out infinite alternate; }
+  .hb-cloud:nth-of-type(2n) { animation-duration: 33s; animation-direction: alternate-reverse; }
+  .hb-tuft { transform-box: fill-box; transform-origin: 50% 100%; animation: c-sway 3.4s ease-in-out infinite alternate; }
+  .hb-tuft:nth-of-type(2n) { animation-duration: 2.7s; animation-direction: alternate-reverse; }
+  .hb-ripple { animation: c-ripple 2.8s ease-in-out infinite alternate; }
+
+  /* Kacang climbs up behind the bottom nav when the app opens. */
+  .bh-bottomnav__peek { animation: c-peek .6s var(--wn-spring) .3s backwards; }
+
+  /* The nav: the blob slides over (motion.css), the colours follow, and the icon it lands on wiggles. */
+  .bh-nav__item, .rail__link { transition: color .2s ease, background-color .15s ease, scale .32s var(--wn-spring); }
+  .bh-nav__item.is-active > .bh-nav__pill .bh-icon, .rail__link.is-active > .bh-icon { animation: c-wiggle .5s ease .1s; }
+
+  /* Pressed stickers keep pushing down into their shadow as they give under the finger. */
+  .wn-press:is(.bh-btn, .bh-chip, .bh-nav__fab, .entry__key, .entry__cat, .entry__choice) {
+    transition: scale .32s var(--wn-spring), transform .08s ease, box-shadow .08s ease, background-color .15s ease, color .15s ease;
+  }
+  .bh-seg__opt, .entry__seg-opt, .entry__type { transition: background-color .2s ease, color .2s ease, box-shadow .2s ease, scale .32s var(--wn-spring); }
+  .spend, .setting, .meter-link, .stash-link, .card-link { transition: background-color .15s ease, scale .32s var(--wn-spring); }
+
+  /* The add/edit flow: each page slides in from the side it lies on. The sheet itself rises in and
+     drops away with warren/web's sheet transition (Entry.svelte). */
+  .entry__page.is-in { animation: entry-in .28s var(--wn-ease); }
+  .entry__page.is-in-back { animation: entry-in-back .28s var(--wn-ease); }
+  .entry__scrim { opacity: calc(1 - var(--wn-drag, 0)); }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  /* What Burrow's own reduced-motion list leaves moving. */
+  .bh-meter__cap, .bh-nav__pill, .entry__dots span, .disclosure > summary .bh-icon { transition: none; }
+}
+
+@keyframes c-rise { from { opacity: 0; translate: 0 18px; scale: .98; } }
+@keyframes c-fade { from { opacity: 0; } }
+@keyframes c-pop { from { opacity: 0; scale: .6; } }
+@keyframes c-bloom { from { opacity: 0; scale: .8; rotate: -40deg; } }
+@keyframes c-drop { from { opacity: 0; translate: 0 -60px; } 60% { opacity: 1; } }
+@keyframes c-hop { 30% { translate: 0 -7px; scale: .96 1.05; } 60% { translate: 0 0; scale: 1.04 .96; } }
+@keyframes c-drift { from { translate: -14px 0; } to { translate: 18px 0; } }
+@keyframes c-sway { from { rotate: -8deg; } to { rotate: 8deg; } }
+@keyframes c-ripple { from { translate: -4px 0; } to { translate: 4px 0; } }
+@keyframes c-peek { from { translate: 0 60%; } }
+@keyframes c-wiggle { 25% { rotate: -14deg; } 50% { rotate: 10deg; } 75% { rotate: -4deg; } }
+@keyframes entry-in { from { opacity: 0; translate: 32px 0; } }
+@keyframes entry-in-back { from { opacity: 0; translate: -32px 0; } }

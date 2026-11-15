@@ -10,7 +10,7 @@
 	const income = $derived(txn.type === 'income');
 </script>
 
-<button type="button" class="spend" onclick={() => entry.edit(txn)}>
+<button type="button" class="spend wn-press" onclick={() => entry.edit(txn)}>
 	<CategoryTile category={txn.category} class={income && txn.category.kind !== 'income' ? 'tile--in' : ''} />
 	<span class="spend__text">
 		<span class="spend__title">{txn.title}</span>

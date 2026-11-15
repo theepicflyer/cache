@@ -15,6 +15,9 @@ export default defineConfig({
 			adapter: adapter({ fallback: 'index.html' })
 		})
 	],
+	// warren/web ships TypeScript source (.svelte.ts among it), which the dev server's dependency
+	// pre-bundling can't parse; served as source, it goes through the Svelte plugin like the app's own.
+	optimizeDeps: { exclude: ['warren'] },
 	server: {
 		proxy: Object.fromEntries(
 			['/api', '/auth', '/oauth', '/mcp', '/.well-known'].map((path) => [path, { target: server, changeOrigin: false }])

@@ -18,6 +18,7 @@
 </script>
 
 <script lang="ts">
+	import { smoothDetails } from '#lib/motion.svelte.ts';
 	import type { Kind } from '#lib/types.ts';
 	import CategoryIcon from './CategoryIcon.svelte';
 	import Icon from './Icon.svelte';
@@ -45,8 +46,10 @@
 		library.groups.map((g) => ({ label: g.label, icons: g.icons.filter((i) => words.every((w) => i.k.includes(w))) })).filter((g) => g.icons.length)
 	);
 
+	let picker = $state<HTMLDetailsElement>();
+	/** A choice closes the picker the way a tap on its summary does, so it folds away. */
 	function pick() {
-		open = false;
+		if (open) picker?.querySelector('summary')?.click();
 	}
 </script>
 
@@ -66,8 +69,8 @@
 		</span>
 		<span class="grow"><span class="setting__title">{label}</span><br /><span class="small muted">{hint}</span></span>
 	</div>
-	<details class="icon-picker" bind:open>
-		<summary class="bh-btn bh-btn--secondary bh-btn--sm">Choose an icon</summary>
+	<details class="icon-picker" bind:open bind:this={picker} {@attach smoothDetails}>
+		<summary class="bh-btn bh-btn--secondary bh-btn--sm wn-press">Choose an icon</summary>
 		<div class="icon-picker__body">
 			<label class="input input--affix"
 				><Icon name="search" size={20} /><span class="sr-only">Search icons</span><input
@@ -87,7 +90,7 @@
 					<p class="icon-group__title">{g.label}</p>
 					<div class="icon-grid">
 						{#each g.icons as i (i.n)}
-							<label class="icon-opt" title={i.l}
+							<label class="icon-opt wn-press" title={i.l}
 								><input type="radio" name="icon" value={i.n} bind:group={value} onchange={pick} /><span class="icon-opt__box"><CategoryIcon name={i.n} size={24} /></span><span class="sr-only"
 									>{i.l}</span
 								></label

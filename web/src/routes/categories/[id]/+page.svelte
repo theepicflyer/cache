@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { ApiError, del, patch } from '#lib/api.ts';
+	import { ApiError, changes, del, loaded, patch } from 'warren/web';
 	import type { ChartData } from '#lib/charts.ts';
 	import CategoryForm, { type CategoryValues } from '#lib/components/CategoryForm.svelte';
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
@@ -9,11 +9,11 @@
 	import Empty from '#lib/components/Empty.svelte';
 	import Habitat from '#lib/components/Habitat.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import Loading from '#lib/components/Loading.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
 	import TransactionRow from '#lib/components/TransactionRow.svelte';
 	import { money, month } from '#lib/format.ts';
-	import { loaded } from '#lib/load.svelte.ts';
-	import { entry, ledger, toasts } from '#lib/state.svelte.ts';
+	import { smoothDetails } from '#lib/motion.svelte.ts';
+	import { entry, toasts } from '#lib/state.svelte.ts';
 	import type { CategoryDetail, Kind } from '#lib/types.ts';
 
 	const detail = loaded<CategoryDetail>(() => `/api/categories/${page.params.id}`);
@@ -64,7 +64,7 @@
 		try {
 			const res = await patch<{ toast: string }>(`/api/categories/${cat.id}`, values);
 			toasts.show(res.toast);
-			ledger.changed();
+			changes.changed();
 		} catch (err) {
 			if (err instanceof ApiError && Object.keys(err.errors).length) errors = err.errors;
 			else toasts.error(err);
@@ -77,7 +77,7 @@
 		try {
 			const res = await del<{ toast: string }>(`/api/amounts/${id}`);
 			toasts.show(res.toast);
-			ledger.changed();
+			changes.changed();
 		} catch (err) {
 			toasts.error(err);
 		}
@@ -88,13 +88,13 @@
 		try {
 			const res = await del<{ toast: string; result: 'archived' | 'deleted' }>(`/api/categories/${cat.id}`);
 			if (res.result === 'archived') {
-				ledger.changed();
+				changes.changed();
 				// Archiving instead of deleting is a heads-up, so it is Kayu's worried toast like the old error message.
 				toasts.show(res.toast, { who: 'kayu', mood: 'worried' });
 			} else {
 				// Leave first: reloading this page now would ask for a category that no longer exists.
 				await goto('/settings');
-				ledger.changed();
+				changes.changed();
 				toasts.show(res.toast);
 			}
 		} catch (err) {
@@ -106,7 +106,7 @@
 <svelte:head><title>{cat?.name ?? 'Category'} · Cache</title></svelte:head>
 
 {#if !data || !cat || !chart}
-	<Loading />
+	<Skeleton />
 {:else}
 	<Habitat kind="oak" mood={cat.kind === 'fund' ? ((data.balance ?? 0) < 0 ? 'worried' : 'happy') : trend?.consistently_over ? 'worried' : 'happy'}>
 		<span class="bh-habitat__eyebrow"><a href="/settings" style="color:inherit">Settings</a> · {KINDS[cat.kind]}{cat.archived ? ' · archived' : ''}</span>
@@ -130,7 +130,7 @@
 				<h2 class="bh-card__title section-title" id="hist-title">
 					{cat.kind === 'income' ? 'Received' : cat.kind === 'fund' ? 'Balance' : 'Spent against budget'}, last 12 months
 				</h2>
-				<button type="button" class="bh-btn bh-btn--secondary bh-btn--sm" onclick={() => entry.add(cat.id)}><Icon name="plus" size={18} /> Add</button>
+				<button type="button" class="bh-btn bh-btn--secondary bh-btn--sm wn-press" onclick={() => entry.add(cat.id)}><Icon name="plus" size={18} /> Add</button>
 			</div>
 			{#if cat.kind === 'budget'}<div class="legend" style="margin-bottom:8px"><span class="l-spent">Spent</span><span class="l-spent-over">Spent, over</span><span class="l-budget">Budget</span></div>{/if}
 			<Chart data={chart} label="History" small />
@@ -152,11 +152,11 @@
 			{#if values}
 				<form class="form-grid" onsubmit={save}>
 					<CategoryForm bind:values {errors} editing />
-					<div class="actions actions--end"><button class="bh-btn bh-btn--primary" type="submit" disabled={saving}>Save {cat.kind === 'fund' ? 'fund' : 'category'}</button></div>
+					<div class="actions actions--end"><button class="bh-btn bh-btn--primary wn-press" type="submit" disabled={saving}>Save {cat.kind === 'fund' ? 'fund' : 'category'}</button></div>
 				</form>
 			{/if}
 			{#if cat.kind !== 'income'}
-				<details class="disclosure disclosure--ruled">
+				<details class="disclosure disclosure--ruled" {@attach smoothDetails}>
 					<summary>Amount history <Icon name="chevron-down" size={20} /></summary>
 					<div class="list list--flat">
 						{#each data.amounts as row (row.id)}
@@ -164,7 +164,7 @@
 								<span class="grow"><span class="bh-when"><Icon name="calendar" size={14} />From {month(row.start_month, 'short')}</span></span>
 								<span class="bh-row__end"><span class="setting__value">{money(row.amount)}</span><span class="bh-row__detail">a month</span></span>
 								{#if data.amounts.length > 1}
-									<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--icon" aria-label="Remove this change" onclick={() => removeAmount(row.id)}><Icon name="x" size={16} /></button>
+									<button type="button" class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--icon wn-press" aria-label="Remove this change" onclick={() => removeAmount(row.id)}><Icon name="x" size={16} /></button>
 								{/if}
 							</div>
 						{/each}
@@ -172,7 +172,7 @@
 				</details>
 			{/if}
 			<div class="bh-card__foot">
-				<button class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--danger" type="button" onclick={remove}><Icon name="trash" size={18} /> {data.recent.length ? 'Archive' : 'Delete'} {cat.name}</button>
+				<button class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--danger wn-press" type="button" onclick={remove}><Icon name="trash" size={18} /> {data.recent.length ? 'Archive' : 'Delete'} {cat.name}</button>
 			</div>
 		</section>
 
