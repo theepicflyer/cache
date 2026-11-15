@@ -1,8 +1,8 @@
 /**
  * One-off: bring the ledger from the Django version of Cache (Postgres) into this one.
  *
- * 1. Export it from the old database as one JSON document (the query is `EXPORT_SQL` below, also in
- *    MIGRATIONS.md):
+ * 1. Export it from the old database as one JSON document (the query is `EXPORT_SQL` below):
+ *      node dist/importLedger.js --sql > export.sql
  *      psql -U wygiwyh -d wygiwyh -At -f export.sql > ledger.json
  * 2. With the app stopped, into an empty DATA_DIR:
  *      node dist/importLedger.js ledger.json
@@ -95,10 +95,13 @@ export function importLedger(db: Db, data: LedgerExport): Record<string, number>
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const file = process.argv[2];
+  if (file === "--sql") {
+    console.log(EXPORT_SQL);
+    process.exit(0);
+  }
   if (!file) {
     console.error("usage: node dist/importLedger.js <ledger.json>   (stop the app first)");
-    console.error("export it from the old database with:\n");
-    console.error(EXPORT_SQL);
+    console.error("       node dist/importLedger.js --sql           (the query that exports ledger.json)");
     process.exit(2);
   }
   const { dataDir } = loadConfig();

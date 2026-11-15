@@ -18,9 +18,10 @@ Only the ledger comes over (`ledger_*` tables and the people who entered transac
 ### Deploy steps
 
 1. **Pocket ID.** On the client Cache uses, set the callback URLs to `https://cache.example.com/auth/web/callback` and `https://cache.example.com/oauth/callback` (replacing `/auth/oidc/.../login/callback/`). Note its issuer URL, client ID and secret.
-2. **Export the ledger** from the old database while the old stack is still up (stop entering transactions first). Save the query from `server/src/importLedger.ts` (`EXPORT_SQL`; `node dist/importLedger.js` with no arguments prints it) as `export.sql`, then:
+2. **Export the ledger** from the old database while the old stack is still up (stop entering transactions first). Get the query from the new image, then run it against the old database:
 
    ```sh
+   docker run --rm ghcr.io/theepicflyer/cache:latest node dist/importLedger.js --sql > export.sql
    docker compose exec -T db psql -U wygiwyh -d wygiwyh -At < export.sql > ledger.json
    ```
 
