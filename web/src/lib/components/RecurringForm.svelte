@@ -47,7 +47,7 @@
 	/** "Next on 25 November". */
 	const nextText = (d: string) => `Next on ${Number(d.slice(8, 10))} ${month(d, 'name')}`;
 
-	async function done(res: Saved & { created?: number }) {
+	async function done(res: Saved) {
 		toasts.show(res.created ? `${res.toast}. ${plural(res.created, 'entry', 'entries')} added.` : res.toast);
 		// Leave first: announcing the change while this page is up reloads a rule that may be deleted.
 		await goto('/recurring');

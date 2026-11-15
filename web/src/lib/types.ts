@@ -230,4 +230,6 @@ export interface Saved {
 	toast: string;
 	spend?: Txn;
 	undo?: number | null;
+	/** Recurring saves: how many past entries the rule created. */
+	created?: number;
 }
