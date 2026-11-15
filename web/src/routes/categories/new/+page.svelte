@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { ApiError, changes, post } from 'warren/web';
 	import CategoryForm, { type CategoryValues } from '#lib/components/CategoryForm.svelte';
-	import Habitat from '#lib/components/Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import { toasts } from '#lib/state.svelte.ts';
 	import type { Kind } from '#lib/types.ts';
 
@@ -41,7 +41,7 @@
 
 <svelte:head><title>New category · Cache</title></svelte:head>
 
-<Habitat kind="river" mood="busy">
+<Habitat class="bh-habitat--page" bounce kind="river" mood="busy">
 	<span class="bh-habitat__eyebrow"><a href="/settings" style="color:inherit">Settings</a></span>
 	<h1 class="page-title">New category</h1>
 </Habitat>

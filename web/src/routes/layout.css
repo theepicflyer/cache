@@ -1,14 +1,23 @@
 /*
- * Cache: the ledger UI. Tokens and the bh-* component classes come from
- * burrow.generated.css (regenerate with `node web/burrow/generate.cjs`).
+ * Cache: the ledger UI. Burrow's tokens and bh-* component classes come from Warren
+ * (warren/burrow), re-synced there from the design system.
  * Phone first; from 1024px a side rail replaces the bottom nav.
  */
 @import '@fontsource-variable/figtree';
 @import '@fontsource-variable/fredoka';
-@import "../lib/burrow/burrow.generated.css";
+@import 'warren/burrow/tokens.css';
+@import 'warren/burrow/burrow.css' layer(components);
 
-:root, [data-theme=wygiwyh_dark] { --warning-text: #ffc83a; color-scheme: dark; }
-[data-theme=wygiwyh_light] { --warning-text: #8a5a3b; color-scheme: light; }
+/* Kacang's app: the accent is mint (the body's bh-app--money does the same below the root). The fonts are
+   the variable cuts, bundled from @fontsource. */
+:root {
+  --accent: var(--mint);
+  --accent-soft: var(--mint-soft);
+  --font-display: "Fredoka Variable", "Avenir Next Rounded", "SF Pro Rounded", system-ui, sans-serif;
+  --font-sans: "Figtree Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+:root, [data-theme=dark] { --warning-text: #ffc83a; color-scheme: dark; }
+[data-theme=light] { --warning-text: #8a5a3b; color-scheme: light; }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -16,8 +25,6 @@ body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink)
 a { color: var(--sky-text); }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; }
 button { font: inherit; color: inherit; }
-img.bh-mascot, img.bh-trace { display: inline-block; flex: none; }
-img.bh-mascot--bounce { transform-origin: 50% 100%; } /* its bounce is in the motion section */
 :where(a, button, summary, select, input, textarea, [tabindex]):focus-visible { outline: 3px solid var(--sky-text); outline-offset: 2px; }
 /* Inputs inside a box: the box draws the focus ring. */
 :is(.bh-field__box, .amount-box, .input--affix) input:focus-visible, .input:focus-visible, .select:focus-visible, .textarea:focus-visible { outline: none; }
@@ -70,7 +77,7 @@ img.bh-mascot--bounce { transform-origin: 50% 100%; } /* its bounce is in the mo
 .month-nav span { opacity: .3; }
 @media (max-width: 480px) {
   .bh-habitat--page .bh-habitat__resident { right: 24px; }
-  .bh-habitat--page .bh-habitat__resident .bh-mascot { width: 80px; height: 80px; }
+  .bh-habitat--page .bh-habitat__resident .bh-mascot { width: 80px !important; height: 80px !important; } /* over Mascot's own size */
   .bh-habitat--page .bh-habitat__props { right: -40px; }
   .bh-habitat--page .bh-habitat__content { max-width: calc(100% - 110px); padding-right: 0; }
 }
@@ -473,8 +480,7 @@ html.entry-open, html.entry-open body { overflow: hidden; }
 
   /* Habitats: clouds drift, grass sways, water ripples, and the resident bounces (and hops when it
      arrives or its mood changes, which draws it again). */
-  img.bh-mascot--bounce { animation: bh-bounce 2.4s ease-in-out infinite; }
-  .page:not(.is-back) .bh-habitat__resident .bh-mascot { animation: c-hop .55s var(--wn-spring), bh-bounce 2.4s ease-in-out .55s infinite; }
+  .page:not(.is-back) .bh-habitat__resident .bh-mascot svg { animation: c-hop .55s var(--wn-spring), bh-bounce 2.4s ease-in-out .55s infinite; }
   .hb-cloud { animation: c-drift 26s ease-in-out infinite alternate; }
   .hb-cloud:nth-of-type(2n) { animation-duration: 33s; animation-direction: alternate-reverse; }
   .hb-tuft { transform-box: fill-box; transform-origin: 50% 100%; animation: c-sway 3.4s ease-in-out infinite alternate; }

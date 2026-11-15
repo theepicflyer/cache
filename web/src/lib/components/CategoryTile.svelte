@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Category } from '#lib/types.ts';
+	import { Trace } from 'warren/burrow';
 	import CategoryIcon from './CategoryIcon.svelte';
 
 	/** The square tile for a category: its icon, else Kacang's acorn for a fund, else its first letter. */
@@ -11,7 +12,7 @@
 	{#if category.display_icon}
 		<CategoryIcon name={category.display_icon} />
 	{:else if category.kind === 'fund'}
-		<img class="bh-trace" src="/img/burrow/traces/acorn.svg" width="26" height="26" alt="" />
+		<Trace name="acorn" size={26} />
 	{:else}
 		{(category.name.slice(0, 1) || '?').toUpperCase()}
 	{/if}

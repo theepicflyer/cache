@@ -7,7 +7,7 @@
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
 	import Chart from '#lib/components/Chart.svelte';
 	import Empty from '#lib/components/Empty.svelte';
-	import Habitat from '#lib/components/Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import Icon from '#lib/components/Icon.svelte';
 	import Skeleton from '#lib/components/Skeleton.svelte';
 	import TransactionRow from '#lib/components/TransactionRow.svelte';
@@ -108,7 +108,7 @@
 {#if !data || !cat || !chart}
 	<Skeleton />
 {:else}
-	<Habitat kind="oak" mood={cat.kind === 'fund' ? ((data.balance ?? 0) < 0 ? 'worried' : 'happy') : trend?.consistently_over ? 'worried' : 'happy'}>
+	<Habitat class="bh-habitat--page" bounce kind="oak" mood={cat.kind === 'fund' ? ((data.balance ?? 0) < 0 ? 'worried' : 'happy') : trend?.consistently_over ? 'worried' : 'happy'}>
 		<span class="bh-habitat__eyebrow"><a href="/settings" style="color:inherit">Settings</a> · {KINDS[cat.kind]}{cat.archived ? ' · archived' : ''}</span>
 		<h1 class="page-title page-title--icon"><CategoryTile category={cat} />{cat.name}</h1>
 		<div class="bh-facts">

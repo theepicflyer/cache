@@ -20,6 +20,7 @@
 <script lang="ts">
 	import { smoothDetails } from '#lib/motion.svelte.ts';
 	import type { Kind } from '#lib/types.ts';
+	import { Trace } from 'warren/burrow';
 	import CategoryIcon from './CategoryIcon.svelte';
 	import Icon from './Icon.svelte';
 
@@ -61,7 +62,7 @@
 				{#if icon}
 					<CategoryIcon name={icon} />
 				{:else if kind === 'fund' && value !== 'letter'}
-					<img class="bh-trace" src="/img/burrow/traces/acorn.svg" width="26" height="26" alt="" />
+					<Trace name="acorn" size={26} />
 				{:else}
 					{(trimmed[0] || '?').toUpperCase()}
 				{/if}

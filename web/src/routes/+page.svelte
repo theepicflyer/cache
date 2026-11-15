@@ -4,7 +4,7 @@
 	import { loaded, query } from 'warren/web';
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
 	import Empty from '#lib/components/Empty.svelte';
-	import Habitat from '#lib/components/Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import Icon from '#lib/components/Icon.svelte';
 	import Skeleton from '#lib/components/Skeleton.svelte';
 	import Meter from '#lib/components/Meter.svelte';
@@ -51,7 +51,7 @@
 {#if !data || !status}
 	<Skeleton />
 {:else}
-	<Habitat kind="oak" mood={status.over ? 'worried' : status.budgets.length && !status.total_spent ? 'sleepy' : 'happy'}>
+	<Habitat class="bh-habitat--page" bounce kind="oak" mood={status.over ? 'worried' : status.budgets.length && !status.total_spent ? 'sleepy' : 'happy'}>
 		<span class="bh-habitat__eyebrow">
 			<span class="month-nav"><a href="/?month={data.prev_month}" aria-label="Previous month"><Icon name="chevron-left" size={16} /></a></span>
 			{month(data.month)}

@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { ApiError, changes, loaded, put, query } from 'warren/web';
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
-	import Habitat from '#lib/components/Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import Skeleton from '#lib/components/Skeleton.svelte';
 	import { month } from '#lib/format.ts';
 	import { toasts } from '#lib/state.svelte.ts';
@@ -47,7 +47,7 @@
 
 <svelte:head><title>Edit amounts · Cache</title></svelte:head>
 
-<Habitat kind="river" mood="busy">
+<Habitat class="bh-habitat--page" bounce kind="river" mood="busy">
 	<span class="bh-habitat__eyebrow"><a href="/settings" style="color:inherit">Settings</a></span>
 	<h1 class="page-title">Monthly amounts</h1>
 	<p class="bh-habitat__sub">Budgets and fund top-ups</p>

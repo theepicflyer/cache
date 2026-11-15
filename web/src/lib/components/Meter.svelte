@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Trace from './Trace.svelte';
+	import { Trace, type TraceName } from 'warren/burrow';
 
 	/**
 	 * Burrow Meter: a sticker track that fills to `percent` and ends in a trace. Going over is
@@ -16,7 +16,7 @@
 		tag = '',
 		tagClass = '',
 		class: klass = ''
-	}: { label?: string; value?: string; percent?: number; over?: boolean; limit?: number | null; cap?: string; tag?: string; tagClass?: string; class?: string } = $props();
+	}: { label?: string; value?: string; percent?: number; over?: boolean; limit?: number | null; cap?: TraceName | ''; tag?: string; tagClass?: string; class?: string } = $props();
 
 	const style = $derived(`--pct: ${percent}%;${over && limit ? ` --limit: ${limit}%;` : ''}`);
 </script>

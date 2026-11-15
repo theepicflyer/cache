@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { wreathArt } from '#lib/burrow/scenes/art.ts';
+	import { wreathArt } from 'warren/burrow';
 
 	/**
 	 * Burrow Ring, wreath variant (Cache's month): 26 oak leaves turn green as the month's budget is

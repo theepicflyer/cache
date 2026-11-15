@@ -14,7 +14,7 @@ export function themeChoice(): ThemeChoice {
 
 export function applyTheme(choice: ThemeChoice): void {
 	const dark = choice === 'dark' || (choice !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
-	document.documentElement.dataset.theme = dark ? 'wygiwyh_dark' : 'wygiwyh_light';
+	document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 }
 
 export function setTheme(choice: ThemeChoice): void {

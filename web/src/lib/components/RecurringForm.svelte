@@ -5,7 +5,7 @@
 	import { toasts } from '#lib/state.svelte.ts';
 	import type { Category, EntryData, Rule, Saved, TxnType, Unit } from '#lib/types.ts';
 	import { onMount } from 'svelte';
-	import Habitat from './Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import Icon from './Icon.svelte';
 
 	/** Add a recurring rule, or edit `rule`. */
@@ -94,7 +94,7 @@
 	}
 </script>
 
-<Habitat kind="river" mood="busy">
+<Habitat class="bh-habitat--page" bounce kind="river" mood="busy">
 	<span class="bh-habitat__eyebrow"><a href="/recurring" style="color:inherit">Recurring</a></span>
 	<h1 class="page-title">{rule ? rule.title : 'New recurring'}</h1>
 	{#if rule}<p class="bh-habitat__sub">{rule.paused ? 'Paused' : rule.next ? nextText(rule.next) : 'Ended'}</p>{/if}

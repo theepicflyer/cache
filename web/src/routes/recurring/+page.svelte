@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
 	import Empty from '#lib/components/Empty.svelte';
-	import Habitat from '#lib/components/Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import Icon from '#lib/components/Icon.svelte';
 	import Skeleton from '#lib/components/Skeleton.svelte';
 	import { day, money, signedMoney } from '#lib/format.ts';
@@ -17,7 +17,7 @@
 {#if !data}
 	<Skeleton cards={[60, 360]} />
 {:else}
-	<Habitat kind="river" mood="happy">
+	<Habitat class="bh-habitat--page" bounce kind="river" mood="happy">
 		<span class="bh-habitat__eyebrow"><a href="/settings" style="color:inherit">Settings</a></span>
 		<h1 class="page-title">Recurring</h1>
 		<div class="bh-facts">
