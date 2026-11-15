@@ -42,7 +42,7 @@ Steps:
 
    Limit it to a user group with just your household, and copy the client ID and secret.
 2. **Fill in the settings.** Copy [docker-compose.yml](docker-compose.yml) and [.env.example](.env.example) (as `.env`) to the server and fill in `.env`.
-3. **Start it** with `docker compose up -d`. This uses the latest release. To stay on one version, set `CACHE_TAG=2.0.0` in `.env`.
+3. **Start it** with `docker compose up -d`. This uses the latest release. To stay on one version, set `CACHE_TAG=4.0.0` in `.env`.
 4. **Point your proxy at it.** For Caddy:
 
    ```
@@ -73,7 +73,7 @@ docker compose run --rm cache npx warren restore /data/backup/app.sqlite
 
 To update, run `docker compose pull && docker compose up -d`. If a release needs anything done by hand, its release notes say so under **Deploy actions**.
 
-**Coming from the Django version (1.x)?** Its data was in Postgres. Export the ledger from the old database once and import it into the new one; [MIGRATIONS.md](MIGRATIONS.md) has the steps.
+**Coming from the Django version (3.x or earlier)?** Its data was in Postgres. Export the ledger from the old database once and import it into the new one; [MIGRATIONS.md](MIGRATIONS.md) has the steps.
 
 ### Connect Claude (optional)
 
@@ -100,6 +100,6 @@ Never set `DEV_LOGIN=true` on a server. To build the image from your own checkou
 
 ## Credits and licence
 
-Cache began as a fork of [WYGIWYH](https://github.com/eitchtee/WYGIWYH) by Herculino Trotta and its contributors, and its git history is kept here up to the point Cache forked. None of WYGIWYH's code is left: Cache 2 is a rewrite in TypeScript on [Warren](https://github.com/theepicflyer/warren), the framework our household's apps share. If WYGIWYH is useful to you, consider [sponsoring its author](https://github.com/sponsors/eitchtee).
+Cache was inspired by [WYGIWYH](https://github.com/eitchtee/WYGIWYH) by Herculino Trotta and its contributors: it began as a fork, and that history is kept in this repository. Cache 4 is a rewrite in TypeScript on [Warren](https://github.com/theepicflyer/warren), the framework our household's apps share, and contains none of WYGIWYH's code. If WYGIWYH is useful to you, consider [sponsoring its author](https://github.com/sponsors/eitchtee).
 
 Cache is MIT licensed; see [LICENSE](LICENSE). Category icons are from [Phosphor Icons](https://phosphoricons.com) (MIT).
