@@ -1,0 +1,17 @@
+services:
+  cache:
+    # Production pulls the released image pinned by CACHE_TAG in .env; locally,
+    # `docker compose up -d --build` builds from source instead.
+    image: ghcr.io/theepicflyer/cache:${CACHE_TAG:-latest}
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    # Everything that must survive a rebuild lives here: the SQLite database and its daily
+    # snapshot, keys, and the store of connected MCP clients. See README, Backups.
+    volumes:
+      - cache-data:/data
+
+volumes:
+  cache-data:

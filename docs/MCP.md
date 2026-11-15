@@ -1,113 +1,28 @@
 # MCP server (`/mcp`)
 
-Cache exposes a Model Context Protocol (MCP) endpoint at **`/mcp`** so an agent
-(claude.ai custom connector, Claude Code CLI, or any MCP client) can read the
-household ledger and, with write access, log expenses and income. It is a
-**stateless streamable-HTTP** server built on
-[`django-mcp-server`](https://pypi.org/project/django-mcp-server/). The tools are a
-hand-written `MCPToolset` in `app/apps/ledger/mcp.py` over the ledger models and
-`apps.ledger.services`, so agents see the same numbers as the app.
+Cache has a Model Context Protocol (MCP) endpoint at **`/mcp`**, so Claude (a claude.ai custom connector, Claude Code, or any MCP client) can read the household ledger and log expenses and income. The server and its sign-in come from [Warren](https://github.com/theepicflyer/warren); the tools are in `server/src/tools.ts`, on the same services as the app, so agents see the same numbers.
 
-## Authentication
+## Sign-in
 
-`/mcp` accepts:
+Sign-in is OAuth, through Pocket ID: Warren runs an OAuth proxy in front of it. A client discovers it from `/.well-known/oauth-protected-resource`, registers itself (Dynamic Client Registration), and sends you to Pocket ID to sign in with your passkey. Anyone who can sign in to the app can connect, and gets every tool. There are no API tokens.
 
-1. **`APIToken`**: `Authorization: Token <key>`. Create one in the app under
-   Settings → Agents (MCP); it is shown once. Scope is read only or read and write.
-2. **OAuth 2.1 Bearer token**: `Authorization: Bearer <access-token>`, from the
-   OAuth flow below (the claude.ai path). Scopes are `mcp:read` and `mcp:write`.
-3. A signed-in browser session or a DRF authtoken (full access, as on `/api/`).
+Registration only accepts redirect URIs on `MCP_ALLOWED_REDIRECT_URIS` (space-separated). The default covers claude.ai, claude.com, Meta Muse and loopback (`http://localhost:*`, `http://127.0.0.1:*`). The Pocket ID client needs `https://cache.example.com/oauth/callback` as a callback URL as well as the browser one.
 
-Every tool requires a signed-in user. Each tool checks scope itself before it runs
-(`access_error` in `apps/ledger/mcp.py`): read tools need `mcp:read` on an OAuth
-token, write tools need a read-and-write `APIToken` or `mcp:write`.
-`LedgerTools._add_tools_to` refuses to register a tool that skips this check.
+The ledger is shared, so tools do no per-person filtering; `created_by` records who added a transaction.
 
-Unauthenticated requests get **HTTP 401** with a
-`WWW-Authenticate: Bearer resource_metadata="…/.well-known/oauth-protected-resource"`
-header that starts the claude.ai OAuth discovery handshake.
+## Connecting
 
-The ledger is shared: every signed-in user sees all of it, so tools do no
-per-user filtering.
+claude.ai: Settings → Connectors → Add custom connector → `https://cache.example.com/mcp`.
 
-## Connecting from claude.ai (OAuth web connector)
-
-Add the tracker as a **custom connector** in claude.ai by URL:
-
-> Settings → Connectors → Add custom connector → URL: `https://<your-host>/mcp`
-
-claude.ai then runs the OAuth 2.1 + PKCE handshake automatically; you only have to
-**log in with your existing tracker session** at the consent step. The flow:
-
-1. claude.ai calls `/mcp` unauthenticated → **401** with the `WWW-Authenticate`
-   header pointing at the protected-resource metadata.
-2. It fetches **`/.well-known/oauth-protected-resource`** (RFC 9728) — which names
-   this server as the `resource` and points at the authorization server — then
-   **`/.well-known/oauth-authorization-server`** (RFC 8414).
-3. The auth-server metadata advertises
-   `client_id_metadata_document_supported: true` and
-   `token_endpoint_auth_methods_supported: ["none"]`, so claude.ai uses the
-   **CIMD** (Client-ID-Metadata-Document) path: its `client_id` is the URL
-   `https://claude.ai/oauth/mcp-oauth-client-metadata`.
-4. claude.ai redirects you to **`/oauth/authorize/`** with a PKCE **S256**
-   challenge and `resource=https://<your-host>/mcp`. The server validates the
-   requested `redirect_uri` against the CIMD document (`https://claude.ai/api/mcp/
-   auth_callback`) and auto-provisions a public OAuth `Application` for it. The
-   CIMD fetch is SSRF-hardened: it requires `https`, refuses to follow redirects,
-   and rejects any `client_id` host that resolves to a private/loopback/link-local/
-   reserved address (fail-closed). The `MCP_CIMD_ALLOW_PRIVATE_HOSTS` setting
-   (default `False`) relaxes only the private-IP block for local test fixtures.
-5. You **log in / consent** with your existing tracker session. The server issues
-   an authorization code, which claude.ai exchanges at **`/oauth/token/`** (public
-   client, **no secret**, with the PKCE `code_verifier`) for a Bearer access token
-   carrying `mcp:read mcp:write`.
-6. Every subsequent `/mcp` call uses `Authorization: Bearer <token>`.
-
-**Audience binding (RFC 8707):** if a `resource` parameter is sent it MUST equal
-the exact `/mcp` URL you entered in claude.ai; a mismatch is rejected
-(`400 invalid_target`) so a token can never be minted for a different audience.
-
-The OAuth pieces live in `app/apps/mcp/oauth.py` (discovery metadata, CIMD client
-resolution, Dynamic Client Registration, audience check) and `app/apps/mcp/permissions.py` (scope enforcement);
-`django-oauth-toolkit` supplies the authorize/token endpoints, PKCE and token
-storage. Only `/oauth/authorize/`, `/oauth/token/` and `/oauth/register/` are mounted — none of DOT's
-application-management UI or OIDC discovery is exposed.
-
-### Clients without CIMD (Dynamic Client Registration)
-
-Clients that don't support CIMD, such as Meta's Muse agent, register through
-**`POST /oauth/register/`** (RFC 7591), which the auth-server metadata advertises
-as `registration_endpoint`. The rest of the flow (steps 4–6) is the same.
-
-An open registration endpoint would let any site register a client and receive
-authorization codes, so registration only accepts redirect URIs on the
-`MCP_DCR_ALLOWED_REDIRECT_URIS` setting (space-separated env var). The default
-covers claude.ai, claude.com, Meta Muse and loopback:
-
-```
-https://claude.ai/api/mcp/auth_callback https://claude.com/api/mcp/auth_callback https://agent.meta.ai/api/hatch/oauth/callback http://localhost:* http://127.0.0.1:*
-```
-
-A trailing `:*` matches any port and path on that scheme and host. Setting the
-variable replaces the default, so include the defaults you still want. Every
-registered client is public (no secret) and must use PKCE; a request for a
-confidential client is answered with a public one.
-
-## Connecting from the Claude Code CLI
+Claude Code:
 
 ```sh
-claude mcp add --transport http cache https://cache.example.com/mcp \
-  --header "Authorization: Token <key>"
+claude mcp add --transport http cache https://cache.example.com/mcp
 ```
 
-Then list tools / use them from a Claude Code session. For a local dev stack the
-URL is `http://localhost:<port>/mcp`.
+then run `/mcp` in Claude Code to sign in.
 
-> **Write access.** A `read_write` token (or an OAuth connection granted
-> `mcp:write`) lets the model add, edit and **permanently delete** transactions.
-> Use `read_only` unless you want the agent to log transactions, and review what
-> it proposes.
-
+> **Write access.** A connected client can add, edit and **permanently delete** transactions. Review what it proposes.
 
 ## Tools
 
@@ -132,7 +47,7 @@ Read:
 | `get_budget_analysis` | Per budget category per month budget and spent, months over, averages, `consistently_over`; monthly totals; fund balance series; `flows`: income, out and net per month with their averages. Running months are `partial` and left out of counts and averages. |
 | `list_recurring` | Recurring rules with type, schedule, next date and the month that entry will count toward. |
 
-Write (needs write scope):
+Write:
 
 | Tool | What it does |
 | --- | --- |

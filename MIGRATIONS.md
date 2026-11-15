@@ -9,6 +9,37 @@ template, then trim what doesn't apply.
 
 ---
 
+## 2026-11 — Cache 2: Django and Postgres to Warren and SQLite (`importLedger`)
+
+End-state: one Node container (`ghcr.io/theepicflyer/cache`) with everything in a SQLite file in the `cache-data` volume. No Postgres, no Django, no `/legacy/` screens. Sign-in is Pocket ID through Warren; API tokens are gone and MCP clients connect with OAuth. The old Postgres database is only read, so rolling back is starting the old compose again.
+
+Only the ledger comes over (`ledger_*` tables and the people who entered transactions). If the old app's ledger is still empty, run the `import_wygiwyh` playbook below on the old release first.
+
+### Deploy steps
+
+1. **Pocket ID.** On the client Cache uses, set the callback URLs to `https://cache.example.com/auth/web/callback` and `https://cache.example.com/oauth/callback` (replacing `/auth/oidc/.../login/callback/`). Note its issuer URL, client ID and secret.
+2. **Export the ledger** from the old database while the old stack is still up (stop entering transactions first). Save the query from `server/src/importLedger.ts` (`EXPORT_SQL`; `node dist/importLedger.js` with no arguments prints it) as `export.sql`, then:
+
+   ```sh
+   docker compose exec -T db psql -U wygiwyh -d wygiwyh -At < export.sql > ledger.json
+   ```
+
+   `ledger.json` holds the household's data: keep it off git and delete it after step 6.
+3. **Stop the old stack** (`docker compose down`; keep `postgres_data/`).
+4. **New settings.** Replace the compose file with the new `docker-compose.yml` and `.env` with `.env.example`, filled in: `PUBLIC_URL`, `OIDC_ISSUER` (the address without `/.well-known/...`), `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `TIMEZONE`. None of the old variables are used.
+5. **Import** into the new, empty volume:
+
+   ```sh
+   docker compose run --rm -v "$PWD/ledger.json:/ledger.json:ro" cache node dist/importLedger.js /ledger.json
+   ```
+
+   It prints how many people, categories, monthly amounts, recurring rules and transactions came over, and refuses a database that already has a ledger.
+6. **Start it** (`docker compose up -d`), sign in, and compare Home and Trends for a few months with the old app (start the old stack on another port if needed). People who signed in with Pocket ID before are recognised; anyone who used a password gets a new person on first sign-in, and their old entries keep the old name.
+7. **Reconnect Claude**: remove the old connector in claude.ai and add `https://cache.example.com/mcp` again. Old API tokens no longer work.
+8. Once happy, add the `cache-data` volume to the restic backup (README, Backups), and archive `postgres_data/`.
+
+---
+
 ## 2026-11 — The ledger rebuild (`import_wygiwyh`)
 
 End-state: the app at `/` is the new ledger (`apps.ledger`), with its own
