@@ -6,8 +6,9 @@ COPY web/ ./
 RUN npm run build
 
 FROM node:24-slim AS server
-# Warren is installed from its git repository, which npm clones and builds.
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+# Warren is installed from its git repository, which npm clones and builds; building it compiles
+# better-sqlite3 when no prebuilt binary fits, which needs Python and a C++ toolchain.
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates python3 make g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci
