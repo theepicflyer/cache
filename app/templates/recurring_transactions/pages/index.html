@@ -1,8 +1,0 @@
-{% extends "layouts/base.html" %}
-{% load i18n %}
-
-{% block title %}{% translate 'Recurring Transactions' %}{% endblock %}
-
-{% block content %}
-<div hx-get="{% url 'recurring_transaction_list' %}" hx-trigger="load" class="show-loading"></div>
-{% endblock %}

@@ -9,6 +9,65 @@ template, then trim what doesn't apply.
 
 ---
 
+## 2026-11 — Cache 4: Django and Postgres to Warren and SQLite (`importLedger`)
+
+End-state: one Node container (`ghcr.io/theepicflyer/cache:4.x`) with everything in a SQLite file in the `cache-data` volume. No Postgres, no Django, no `/legacy/` screens. Sign-in is Pocket ID through Warren; API tokens are gone and MCP clients connect with OAuth. The old Postgres database is only read, never changed, so rolling back is starting the old stack again.
+
+Only the ledger comes over: the `ledger_*` tables (introduced in 3.0.0) and the people who entered transactions. The older WYGIWYH tables (`transactions_transaction` and friends) are not read; in 3.x they were copied into the ledger by `import_wygiwyh`. Step 1 checks whether that happened.
+
+Placeholders: `cache.example.com` is the production host; `<old>` is the directory holding the old stack's compose file, `.env` and `postgres_data/`. Run the new stack from a new, empty directory, `<new>`.
+
+### Deploy steps
+
+0. **Pin the old stack to the last Django release.** After this release `:latest` is 4.x, so anything that pulls `:latest` for the old stack would start the new app against the old settings. In `<old>/docker-compose.yml` set the web image to `ghcr.io/theepicflyer/cache:3.3.0` (keep whatever it runs now if that is a pinned 3.x tag). Make sure the old stack is up: `docker compose up -d` in `<old>`.
+
+1. **Check the old ledger has the data.** In `<old>`:
+
+   ```sh
+   docker compose exec -T db psql -U wygiwyh -d wygiwyh -At -c "
+     SELECT 'ledger', count(*), max(date) FROM ledger_transaction
+     UNION ALL SELECT 'wygiwyh', count(*), max(date) FROM transactions_transaction"
+   ```
+
+   - **`ledger` has rows, with a recent `max(date)`:** the household has been using the ledger. Go to step 2.
+   - **`ledger` is 0 (or the table doesn't exist) and `wygiwyh` has rows:** the data was never copied into the ledger. Make sure the old stack runs 3.3.0 (step 0; its migrations create the ledger tables on start), then follow "The ledger rebuild (`import_wygiwyh`)" below, steps 2 to 4, and run this query again.
+   - **Both have rows but `wygiwyh` has newer dates than `ledger`:** entries were added in `/legacy/` after the import. Stop and ask the household which is right; `import_wygiwyh --replace` would throw away anything entered in the ledger since.
+   - **Both are 0:** nothing to import. Skip steps 2 and 5.
+
+2. **Export the ledger** while the old stack is still up. Ask the household to stop entering transactions until step 6. In `<old>`:
+
+   ```sh
+   docker run --rm ghcr.io/theepicflyer/cache:4.0.0 node dist/importLedger.js --sql > export.sql
+   docker compose exec -T db psql -U wygiwyh -d wygiwyh -At -v ON_ERROR_STOP=1 < export.sql > ledger.json
+   ```
+
+   `ledger.json` should be one line of JSON starting with `{"users"`. It holds the household's data: keep it out of git and delete it after step 6.
+
+3. **Stop the old stack**: `docker compose down` in `<old>`. Keep `postgres_data/` and `.env`.
+
+4. **Pocket ID.** On the client the old app used (the old `.env` has its `OIDC_CLIENT_ID`; its `OIDC_SERVER_URL` is the issuer), set the callback URLs to exactly these two, replacing `/auth/oidc/.../login/callback/`:
+   - `https://cache.example.com/auth/web/callback`
+   - `https://cache.example.com/oauth/callback`
+
+5. **Set up and import.** In `<new>`, copy `docker-compose.yml` and `.env.example` (as `.env`) from the release. Fill in `.env`: `PUBLIC_URL=https://cache.example.com`, `OIDC_ISSUER` (the old `OIDC_SERVER_URL` without any `/.well-known/...`), `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` (both from the old `.env`), `TIMEZONE` (the old `TZ` if it was set to the household's zone, else `Asia/Singapore`). Leave `DEV_LOGIN=false`. None of the other old variables are used. Then:
+
+   ```sh
+   docker compose pull
+   docker compose run --rm -v "$PWD/ledger.json:/ledger.json:ro" cache node dist/importLedger.js /ledger.json
+   ```
+
+   It prints how many people, categories, monthly amounts, recurring rules and transactions came over; they should match the counts from step 1. It refuses a database that already has a ledger, so a second run does nothing.
+
+6. **Start it**: `docker compose up -d`. Point the reverse proxy for `cache.example.com` at the new container's port 8000 (same as before if the old one was also on 8000). Check `https://cache.example.com/api/health` returns 200, then have someone sign in and compare this month's Home with the old app. People who signed in with Pocket ID before are recognised; anyone who used a password gets a new person on first sign-in, and their old entries keep the old name.
+
+7. **Reconnect Claude**: in claude.ai remove the old Cache connector and add `https://cache.example.com/mcp`. Old API tokens no longer work.
+
+8. **Backups**: add the `cache-data` volume to the restic backup, leaving out `app.sqlite*` at its top level (README, Backups). Keep `<old>/postgres_data/` until the household is happy, then archive it.
+
+**Rollback**: `docker compose down` in `<new>`, set the Pocket ID callback URLs back, `docker compose up -d` in `<old>` (pinned to 3.3.0 in step 0). Nothing in Postgres was changed.
+
+---
+
 ## 2026-11 — The ledger rebuild (`import_wygiwyh`)
 
 End-state: the app at `/` is the new ledger (`apps.ledger`), with its own

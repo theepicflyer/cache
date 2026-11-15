@@ -1,6 +1,6 @@
 name: Build and Push (reusable)
 
-# Reusable build/push of the prod Django image to GHCR, called by release.yml.
+# Reusable build/push of the prod image to GHCR, called by release.yml.
 # The image carries the commit it was built from in the
 # org.opencontainers.image.revision label; the deployer checks it against the
 # release tag before deploying.
@@ -53,7 +53,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/prod/django/Dockerfile
+          file: ./Dockerfile
           push: true
           provenance: false
           tags: ${{ inputs.image_tags }}

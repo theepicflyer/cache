@@ -1,2 +1,11 @@
-__pycache__/
-postgres_data/
+.git
+.env
+*.sql
+ledger.json
+data
+**/node_modules
+**/dist
+web/build
+web/.svelte-kit
+server/test
+docs
