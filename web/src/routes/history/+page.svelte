@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { get, query } from '#lib/api.ts';
+	import { fade, flip, get, loaded, query, rise, row } from 'warren/web';
 	import Empty from '#lib/components/Empty.svelte';
 	import Habitat from '#lib/components/Habitat.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import Loading from '#lib/components/Loading.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
 	import TransactionRow from '#lib/components/TransactionRow.svelte';
 	import { day, money, month } from '#lib/format.ts';
-	import { loaded } from '#lib/load.svelte.ts';
 	import { toasts } from '#lib/state.svelte.ts';
 	import type { History } from '#lib/types.ts';
+	import { untrack } from 'svelte';
 
 	const params = $derived(page.url.searchParams);
 	const filters = $derived({
@@ -31,6 +31,15 @@
 		older = [];
 	});
 	const last = $derived(older.at(-1) ?? data);
+
+	/**
+	 * The filters the list on screen was loaded with. Other filters cross-fade to a new list; the same
+	 * filters loaded again (after an edit, say) keep the list, and its rows slide in and out.
+	 */
+	const shownFilters = $derived.by(() => {
+		void history.data;
+		return untrack(() => JSON.stringify(filters));
+	});
 
 	async function loadOlder() {
 		if (!last || loadingOlder) return;
@@ -72,7 +81,7 @@
 <svelte:head><title>History · Cache</title></svelte:head>
 
 {#if !data}
-	<Loading />
+	<Skeleton cards={[150, 300, 300]} />
 {:else}
 	<Habitat kind="burrow" mood={data.filtered && !data.count ? 'worried' : 'happy'}>
 		<span class="bh-habitat__eyebrow">Transactions</span>
@@ -121,17 +130,26 @@
 
 	<div id="results">
 		{#if data.days.length}
-			{#each [data, ...older] as chunk (chunk.page)}
-				{#each chunk.days as d (d.date)}
-					<h2 class="day"><Icon name="calendar" size={16} />{d.date === data.today ? 'Today' : day(d.date)}<span class="day__line" aria-hidden="true"></span></h2>
-					<div class="list">
-						{#each d.rows as txn (txn.id)}<TransactionRow {txn} />{/each}
-					</div>
-				{/each}
-			{/each}
+			{#key shownFilters}
+				<div in:fade={{ duration: 220 }}>
+					{#each [data, ...older] as chunk (chunk.page)}
+						<!-- an older page rises in under the last -->
+						<div class="chunk" in:rise>
+							{#each chunk.days as d (d.date)}
+								<section class="day-group" transition:row animate:flip>
+									<h2 class="day"><Icon name="calendar" size={16} />{d.date === data.today ? 'Today' : day(d.date)}<span class="day__line" aria-hidden="true"></span></h2>
+									<div class="list">
+										{#each d.rows as txn (txn.id)}<div class="txn" transition:row animate:flip><TransactionRow {txn} /></div>{/each}
+									</div>
+								</section>
+							{/each}
+						</div>
+					{/each}
+				</div>
+			{/key}
 			{#if last && last.page < last.pages}
 				<div class="more">
-					<button type="button" class="bh-btn bh-btn--secondary bh-btn--sm" disabled={loadingOlder} onclick={loadOlder}>Load older transactions</button>
+					<button type="button" class="bh-btn bh-btn--secondary bh-btn--sm wn-press" disabled={loadingOlder} onclick={loadOlder}>Load older transactions</button>
 				</div>
 			{/if}
 		{:else if data.filtered}

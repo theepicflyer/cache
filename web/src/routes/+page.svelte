@@ -1,18 +1,19 @@
 <script lang="ts">
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
-	import { query } from '#lib/api.ts';
+	import { loaded, query } from 'warren/web';
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
 	import Empty from '#lib/components/Empty.svelte';
 	import Habitat from '#lib/components/Habitat.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import Loading from '#lib/components/Loading.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
 	import Meter from '#lib/components/Meter.svelte';
+	import Money from '#lib/components/Money.svelte';
 	import Stash from '#lib/components/Stash.svelte';
 	import TransactionRow from '#lib/components/TransactionRow.svelte';
 	import Wreath from '#lib/components/Wreath.svelte';
 	import { day, money, month, plural, signedMoney } from '#lib/format.ts';
-	import { loaded } from '#lib/load.svelte.ts';
+	import { settle } from '#lib/motion.svelte.ts';
 	import { entry } from '#lib/state.svelte.ts';
 	import type { BudgetLine, Home } from '#lib/types.ts';
 	import { onMount } from 'svelte';
@@ -29,6 +30,17 @@
 		}
 	});
 
+	// Another month: the header's text and the cards slide in from the side it came from.
+	let heading = $state<HTMLElement>();
+	let body = $state<HTMLElement>();
+	let shownMonth = '';
+	$effect(() => {
+		const m = data?.month;
+		if (!m) return;
+		if (shownMonth && m !== shownMonth) settle([heading, body], m > shownMonth ? 1 : -1);
+		shownMonth = m;
+	});
+
 	const spentText = (b: BudgetLine) => `${b.spent < 0 ? `${money(-b.spent)} back` : money(b.spent)} / ${money(b.budget)}`;
 	/** The budget as a share of what was spent, for the tick on an over-budget meter. */
 	const limit = (b: BudgetLine) => (b.spent > 0 ? Math.round((b.budget / b.spent) * 100) : null);
@@ -37,7 +49,7 @@
 <svelte:head><title>{data ? month(data.month) : 'Home'} · Cache</title></svelte:head>
 
 {#if !data || !status}
-	<Loading />
+	<Skeleton />
 {:else}
 	<Habitat kind="oak" mood={status.over ? 'worried' : status.budgets.length && !status.total_spent ? 'sleepy' : 'happy'}>
 		<span class="bh-habitat__eyebrow">
@@ -51,18 +63,20 @@
 				{/if}
 			</span>
 		</span>
-		{#if !status.budgets.length}
-			<h1 class="page-title">Set up budgets</h1>
-		{:else if status.over}
-			<h1 class="page-title">{money(-status.left)} over</h1>
-		{:else}
-			<h1 class="page-title">{money(status.left)} left</h1>
-		{/if}
-		{#if status.days_left !== null}
-			<p class="bh-habitat__sub">{status.days_left === 0 ? 'Last day of the month' : `${plural(status.days_left, 'day')} to go`}</p>
-		{:else if !data.is_current}
-			<p class="bh-habitat__sub"><a href="/">Back to this month</a></p>
-		{/if}
+		<div bind:this={heading}>
+			{#if !status.budgets.length}
+				<h1 class="page-title">Set up budgets</h1>
+			{:else if status.over}
+				<h1 class="page-title"><Money value={-status.left} /> over</h1>
+			{:else}
+				<h1 class="page-title"><Money value={status.left} /> left</h1>
+			{/if}
+			{#if status.days_left !== null}
+				<p class="bh-habitat__sub">{status.days_left === 0 ? 'Last day of the month' : `${plural(status.days_left, 'day')} to go`}</p>
+			{:else if !data.is_current}
+				<p class="bh-habitat__sub"><a href="/">Back to this month</a></p>
+			{/if}
+		</div>
 	</Habitat>
 
 	{#if !status.budgets.length && !status.funds.length}
@@ -70,18 +84,18 @@
 			<Empty who="kayu" mood="sleepy" title="No categories yet">
 				Add the categories you spend in, each with a monthly budget, and any sinking funds.
 				<div class="actions" style="justify-content:center;margin-top:12px">
-					<a class="bh-btn bh-btn--primary" href="/categories/new"><Icon name="plus" size={20} /> Add a category</a>
+					<a class="bh-btn bh-btn--primary wn-press" href="/categories/new"><Icon name="plus" size={20} /> Add a category</a>
 				</div>
 			</Empty>
 		</div>
 	{:else}
-		<div class="cols">
+		<div class="cols" bind:this={body}>
 			<div class="stack">
 				{#if status.budgets.length}
 					<div class="bh-card">
 						<div class="center">
 							<Wreath leaves={status.leaves}>
-								<span class="ring-big">{money(status.total_spent)}</span>
+								<span class="ring-big"><Money value={status.total_spent} /></span>
 								<span class="ring-small">spent of {money(status.total_budget)}</span>
 							</Wreath>
 						</div>
@@ -105,7 +119,7 @@
 						</div>
 						<div class="meters">
 							{#each status.budgets as b (b.category.id)}
-								<a class="meter-link" href="/history{query({ category: b.category.id, month: data.month })}">
+								<a class="meter-link wn-press" href="/history{query({ category: b.category.id, month: data.month })}">
 									<Meter label={b.category.name} percent={b.percent} over={b.over} limit={limit(b)} value={spentText(b)} tag={b.over ? 'over' : ''} tagClass="bh-tag--over" />
 								</a>
 							{/each}
@@ -122,16 +136,16 @@
 							<a class="card-link" href="/history{query({ type: 'income', month: data.month })}">Income</a>
 						</div>
 						<div class="kpis">
-							<div class="kpi"><span class="kpi__label">Income</span><span class="kpi__value in-text">{money(status.income)}</span></div>
-							<div class="kpi"><span class="kpi__label">Spent</span><span class="kpi__value">{money(status.out)}</span><span class="kpi__sub">budgets and funds</span></div>
+							<div class="kpi"><span class="kpi__label">Income</span><span class="kpi__value in-text"><Money value={status.income} /></span></div>
+							<div class="kpi"><span class="kpi__label">Spent</span><span class="kpi__value"><Money value={status.out} /></span><span class="kpi__sub">budgets and funds</span></div>
 							<div class="kpi">
-								<span class="kpi__label">{status.net < 0 ? 'Short' : 'Left over'}</span><span class="kpi__value" class:over-text={status.net < 0}>{money(status.net)}</span>
+								<span class="kpi__label">{status.net < 0 ? 'Short' : 'Left over'}</span><span class="kpi__value" class:over-text={status.net < 0}><Money value={status.net} /></span>
 							</div>
 						</div>
 						{#if status.incomes.length > 1}
 							<div class="list list--flat" style="margin-top:8px">
 								{#each status.incomes as i (i.category.id)}
-									<a class="setting" href="/categories/{i.category.id}">
+									<a class="setting wn-press" href="/categories/{i.category.id}">
 										<CategoryTile category={i.category} /><span class="grow setting__title">{i.category.name}</span><span class="setting__value in-text">{money(i.received)}</span>
 									</a>
 								{/each}
@@ -147,7 +161,7 @@
 						</div>
 						<div class="stashes">
 							{#each status.funds as f (f.category.id)}
-								<a class="stash-link" href="/categories/{f.category.id}">
+								<a class="stash-link wn-press" href="/categories/{f.category.id}">
 									<Stash name={f.category.name} value={money(f.balance)} acorns={f.acorns} class={f.balance < 0 ? 'is-negative' : ''}>
 										{#if f.topup}<span class="bh-tag bh-tag--in">+{money(f.topup)} a month</span>{/if}
 										{#if f.category.target}<span class="bh-tag">Target {money(f.category.target)}</span>{/if}
@@ -169,7 +183,7 @@
 						</div>
 						<div class="list list--flat">
 							{#each data.upcoming as { date, rule } (rule.id + date)}
-								<a class="spend" href="/recurring/{rule.id}">
+								<a class="spend wn-press" href="/recurring/{rule.id}">
 									<CategoryTile category={rule.category} />
 									<span class="spend__text">
 										<span class="spend__title">{rule.title}</span>

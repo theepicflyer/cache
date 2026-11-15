@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { query } from '#lib/api.ts';
+	import { loaded, query } from 'warren/web';
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
 	import Chart from '#lib/components/Chart.svelte';
 	import Empty from '#lib/components/Empty.svelte';
 	import Habitat from '#lib/components/Habitat.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import Loading from '#lib/components/Loading.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
 	import Meter from '#lib/components/Meter.svelte';
+	import Money from '#lib/components/Money.svelte';
 	import { money, month } from '#lib/format.ts';
-	import { loaded } from '#lib/load.svelte.ts';
+	import { settle } from '#lib/motion.svelte.ts';
 	import type { Cell, Trends } from '#lib/types.ts';
 
 	const trends = loaded<Trends>(() => `/api/trends${query({ months: page.url.searchParams.get('months'), end: page.url.searchParams.get('end') })}`);
@@ -30,12 +31,26 @@
 	/** The budget as a share of the spend, for the tick on an over-budget meter. */
 	const limit = (spent: number, budget: number) => (spent > 0 ? Math.round((budget / spent) * 100) : null);
 	const spans = [6, 12, 24];
+
+	// Other months: earlier or later slide in from their side; another span cross-fades.
+	let heading = $state<HTMLElement>();
+	let body = $state<HTMLElement>();
+	let shown = '';
+	$effect(() => {
+		if (!a) return;
+		const now = `${a.span} ${a.end}`;
+		if (shown && now !== shown) {
+			const [span, end] = shown.split(' ');
+			settle([heading, body], Number(span) !== a.span ? 0 : a.end > end! ? 1 : -1);
+		}
+		shown = now;
+	});
 </script>
 
 <svelte:head><title>Trends · Cache</title></svelte:head>
 
 {#if !a}
-	<Loading />
+	<Skeleton />
 {:else}
 	<Habitat kind="oak" mood={a.flagged.length ? 'worried' : 'happy'}>
 		<span class="bh-habitat__eyebrow">
@@ -50,19 +65,19 @@
 			</span>
 		</span>
 		<h1 class="page-title">Trends</h1>
-		<p class="bh-habitat__sub">{complete ? `Over budget in ${a.months_over} of ${complete} month${complete === 1 ? '' : 's'}` : 'No complete months yet'}</p>
+		<p class="bh-habitat__sub" bind:this={heading}>{complete ? `Over budget in ${a.months_over} of ${complete} month${complete === 1 ? '' : 's'}` : 'No complete months yet'}</p>
 	</Habitat>
 
 	<nav class="bh-seg seg-bar" aria-label="Months shown">
 		{#each spans as n (n)}
-			<a class="bh-seg__opt" class:is-on={a.span === n} href="/trends{query({ months: n, end: a.end })}" aria-current={a.span === n ? 'page' : undefined}>{n} months</a>
+			<a class="bh-seg__opt wn-press" class:is-on={a.span === n} href="/trends{query({ months: n, end: a.end })}" aria-current={a.span === n ? 'page' : undefined}>{n} months</a>
 		{/each}
 	</nav>
 
 	{#if !a.categories.length && !a.funds.length}
 		<div class="bh-card"><Empty who={null} title="Nothing to compare yet">Trends appear once you have budgets and a month of transactions.</Empty></div>
 	{:else if charts}
-		<div class="cols">
+		<div class="cols" bind:this={body}>
 			<section class="bh-card span-2" aria-labelledby="kpi-title">
 				<h2 class="sr-only" id="kpi-title">Summary</h2>
 				<div class="kpis">
@@ -73,12 +88,12 @@
 					</div>
 					<div class="kpi">
 						<span class="kpi__label">Average spent</span>
-						<span class="kpi__value">{money(a.avg_spent)}</span>
+						<span class="kpi__value"><Money value={a.avg_spent} /></span>
 						<span class="kpi__sub">a month, budgets only</span>
 					</div>
 					<div class="kpi">
 						<span class="kpi__label">Average budget</span>
-						<span class="kpi__value">{money(a.avg_budget)}</span>
+						<span class="kpi__value"><Money value={a.avg_budget} /></span>
 						<span class="kpi__sub">
 							{#if a.avg_spent > a.avg_budget}<span class="over-text">{money(a.avg_spent - a.avg_budget)} over</span> on average{:else}{money(a.avg_budget - a.avg_spent)} under on average{/if}
 						</span>
@@ -112,7 +127,7 @@
 					</div>
 					<div class="list list--flat">
 						{#each a.flagged as t (t.category.id)}
-							<a class="spend" href="/categories/{t.category.id}">
+							<a class="spend wn-press" href="/categories/{t.category.id}">
 								<CategoryTile category={t.category} />
 								<span class="spend__text">
 									<span class="spend__title">{t.category.name}</span>
@@ -127,7 +142,7 @@
 					</div>
 					<div class="bh-card__foot">
 						<span>Spend less in these, or set each budget nearer its average so it reflects reality.</span>
-						<a class="bh-btn bh-btn--secondary bh-btn--sm" href="/settings/budgets"><Icon name="pencil" size={18} /> Edit budgets</a>
+						<a class="bh-btn bh-btn--secondary bh-btn--sm wn-press" href="/settings/budgets"><Icon name="pencil" size={18} /> Edit budgets</a>
 					</div>
 				</section>
 			{/if}
@@ -136,7 +151,7 @@
 				<div class="bh-card__head"><h2 class="bh-card__title section-title" id="avg-title">Average month by category</h2></div>
 				<div class="meters">
 					{#each a.categories as t (t.category.id)}
-						<a class="meter-link" href="/categories/{t.category.id}">
+						<a class="meter-link wn-press" href="/categories/{t.category.id}">
 							<Meter
 								label={t.category.name}
 								percent={t.avg_percent ?? 0}
@@ -199,10 +214,10 @@
 						<span class="legend"><span class="l-spent">Income</span><span class="l-bark">Spent</span></span>
 					</div>
 					<div class="kpis" style="margin-bottom:12px">
-						<div class="kpi"><span class="kpi__label">Average income</span><span class="kpi__value in-text">{money(a.avg_income)}</span><span class="kpi__sub">a month</span></div>
-						<div class="kpi"><span class="kpi__label">Average spent</span><span class="kpi__value">{money(a.avg_out)}</span><span class="kpi__sub">budgets and funds</span></div>
+						<div class="kpi"><span class="kpi__label">Average income</span><span class="kpi__value in-text"><Money value={a.avg_income} /></span><span class="kpi__sub">a month</span></div>
+						<div class="kpi"><span class="kpi__label">Average spent</span><span class="kpi__value"><Money value={a.avg_out} /></span><span class="kpi__sub">budgets and funds</span></div>
 						<div class="kpi">
-							<span class="kpi__label">Average {a.avg_net < 0 ? 'short' : 'left over'}</span><span class="kpi__value" class:over-text={a.avg_net < 0}>{money(a.avg_net)}</span><span class="kpi__sub">a month</span>
+							<span class="kpi__label">Average {a.avg_net < 0 ? 'short' : 'left over'}</span><span class="kpi__value" class:over-text={a.avg_net < 0}><Money value={a.avg_net} /></span><span class="kpi__sub">a month</span>
 						</div>
 					</div>
 					<Chart data={charts.inout} label="Income and spending by month" small />
@@ -215,7 +230,7 @@
 					<Chart data={charts.funds} label="Fund balances by month" small />
 					<div class="list list--flat" style="margin-top:12px">
 						{#each a.funds as f (f.category.id)}
-							<a class="setting" href="/categories/{f.category.id}">
+							<a class="setting wn-press" href="/categories/{f.category.id}">
 								<CategoryTile category={f.category} />
 								<span class="setting__text">
 									<span class="setting__title">{f.category.name}</span>

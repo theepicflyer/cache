@@ -112,8 +112,12 @@ function build(data: ChartData, c: Colors): ChartConfiguration {
 	}
 }
 
-/** Draw `data` on a canvas. Colours are read from the theme at draw time, so draw again when the theme changes. */
-export async function draw(canvas: HTMLCanvasElement, data: ChartData): Promise<ChartJs> {
+/**
+ * Draw `data` on a canvas. Colours are read from the theme at draw time, so draw again when the theme
+ * changes. `animate` grows the bars and draws the lines in, left to right; only a chart's first
+ * drawing does, so a redraw for a new theme or new data appears at once.
+ */
+export async function draw(canvas: HTMLCanvasElement, data: ChartData, animate = false): Promise<ChartJs> {
 	const { default: Chart } = await import('chart.js/auto');
 	const c = colors();
 	const d = Chart.defaults;
@@ -130,7 +134,19 @@ export async function draw(canvas: HTMLCanvasElement, data: ChartData): Promise<
 	d.plugins.tooltip.bodyColor = c.paper;
 	d.plugins.tooltip.cornerRadius = 10;
 	d.plugins.tooltip.padding = 10;
-	if (matchMedia('(prefers-reduced-motion: reduce)').matches) d.animation = false;
 	Chart.getChart(canvas)?.destroy();
-	return new Chart(canvas, build(data, c));
+	const config = build(data, c);
+	const still = !animate || matchMedia('(prefers-reduced-motion: reduce)').matches;
+	config.options = {
+		...config.options,
+		animation: still
+			? false
+			: {
+					duration: 700,
+					easing: 'easeOutQuart',
+					// one month after another; each bar or point starts a little after the one to its left
+					delay: (ctx) => (ctx.type === 'data' && ctx.mode === 'default' ? ctx.dataIndex * 35 : 0)
+				}
+	};
+	return new Chart(canvas, config);
 }

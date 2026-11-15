@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { get, post } from '#lib/api.ts';
+	import { get, post } from 'warren/web';
 	import world from '#lib/burrow/scenes/world.html?raw';
 	import { session, toasts } from '#lib/state.svelte.ts';
 	import { onMount } from 'svelte';
@@ -37,7 +37,7 @@
 		<div class="bh-card stack">
 			<h1 class="page-title" style="text-align:center">Cache</h1>
 			{#if config?.oidc}
-				<a class="bh-btn bh-btn--primary bh-btn--block" href="/auth/login" data-sveltekit-reload>Sign in with Pocket ID</a>
+				<a class="bh-btn bh-btn--primary bh-btn--block wn-press" href="/auth/login" data-sveltekit-reload>Sign in with Pocket ID</a>
 			{/if}
 			{#if config?.dev}
 				<form
@@ -51,7 +51,7 @@
 						<label for="dev-name">Development sign-in</label>
 						<input class="input" id="dev-name" bind:value={name} placeholder="Any name, e.g. Alice" autocomplete="off" />
 					</div>
-					<button class="bh-btn bh-btn--secondary bh-btn--block" disabled={busy || !name.trim()}>Sign in as {name.trim() || '...'}</button>
+					<button class="bh-btn bh-btn--secondary bh-btn--block wn-press" disabled={busy || !name.trim()}>Sign in as {name.trim() || '...'}</button>
 				</form>
 			{/if}
 			{#if config && !config.oidc && !config.dev}

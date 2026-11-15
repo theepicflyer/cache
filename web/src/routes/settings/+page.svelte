@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { post } from '#lib/api.ts';
+	import { forgetData, loaded, post } from 'warren/web';
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
 	import Habitat from '#lib/components/Habitat.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import Loading from '#lib/components/Loading.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
 	import { money } from '#lib/format.ts';
-	import { loaded } from '#lib/load.svelte.ts';
+	import { smoothDetails } from '#lib/motion.svelte.ts';
 	import { session, toasts } from '#lib/state.svelte.ts';
 	import { setTheme, themeChoice, type ThemeChoice } from '#lib/theme.ts';
 	import type { CategoryList, Kind } from '#lib/types.ts';
@@ -42,6 +42,8 @@
 		signingOut = true;
 		try {
 			await post('/api/auth/logout');
+			// the next person to sign in on this device never sees this one's screens
+			forgetData();
 			await session.load(true);
 			await goto('/login');
 		} catch (err) {
@@ -60,7 +62,7 @@
 </Habitat>
 
 {#if !list.data}
-	<Loading />
+	<Skeleton habitat={false} />
 {:else}
 	{@const data = list.data}
 	<div class="stack">
@@ -70,7 +72,7 @@
 				<a class="card-link" href="/settings/budgets">Edit amounts</a>
 			</div>
 			{#each budgets as c (c.id)}
-				<a class="setting" href="/categories/{c.id}">
+				<a class="setting wn-press" href="/categories/{c.id}">
 					<CategoryTile category={c} />
 					<span class="grow setting__title">{c.name}</span>
 					<span class="bh-row__end"><span class="setting__value">{money(c.amount)}</span><span class="bh-row__detail">a month</span></span>
@@ -78,13 +80,13 @@
 			{:else}
 				<p class="small muted">No budget categories yet.</p>
 			{/each}
-			<div class="actions" style="margin-top:12px"><a class="bh-btn bh-btn--secondary bh-btn--sm" href="/categories/new?kind=budget"><Icon name="plus" size={18} /> Add a category</a></div>
+			<div class="actions" style="margin-top:12px"><a class="bh-btn bh-btn--secondary bh-btn--sm wn-press" href="/categories/new?kind=budget"><Icon name="plus" size={18} /> Add a category</a></div>
 		</section>
 
 		<section class="bh-card" aria-labelledby="funds-title">
 			<div class="bh-card__head"><h2 class="bh-card__title section-title" id="funds-title">Sinking funds</h2></div>
 			{#each funds as c (c.id)}
-				<a class="setting" href="/categories/{c.id}">
+				<a class="setting wn-press" href="/categories/{c.id}">
 					<CategoryTile category={c} />
 					<span class="setting__text"><span class="setting__title">{c.name}</span><span class="bh-tags"><span class="bh-tag bh-tag--in">+{money(c.amount)} a month</span></span></span>
 					<span class="bh-row__end"><span class="setting__value" class:over-text={(c.balance ?? 0) < 0}>{money(c.balance)}</span><span class="bh-row__detail">saved</span></span>
@@ -92,13 +94,13 @@
 			{:else}
 				<p class="small muted">No funds yet. A fund grows by a set amount each month, for costs that come in lumps: car servicing, gifts, travel.</p>
 			{/each}
-			<div class="actions" style="margin-top:12px"><a class="bh-btn bh-btn--secondary bh-btn--sm" href="/categories/new?kind=fund"><Icon name="plus" size={18} /> Add a fund</a></div>
+			<div class="actions" style="margin-top:12px"><a class="bh-btn bh-btn--secondary bh-btn--sm wn-press" href="/categories/new?kind=fund"><Icon name="plus" size={18} /> Add a fund</a></div>
 		</section>
 
 		<section class="bh-card" aria-labelledby="income-title">
 			<div class="bh-card__head"><h2 class="bh-card__title section-title" id="income-title">Income</h2></div>
 			{#each incomes as c (c.id)}
-				<a class="setting" href="/categories/{c.id}">
+				<a class="setting wn-press" href="/categories/{c.id}">
 					<CategoryTile category={c} />
 					<span class="grow setting__title">{c.name}</span>
 					<Icon name="chevron-right" size={20} />
@@ -106,20 +108,20 @@
 			{:else}
 				<p class="small muted">No income categories yet. Add one for pay, interest or anything else coming in.</p>
 			{/each}
-			<div class="actions" style="margin-top:12px"><a class="bh-btn bh-btn--secondary bh-btn--sm" href="/categories/new?kind=income"><Icon name="plus" size={18} /> Add income category</a></div>
+			<div class="actions" style="margin-top:12px"><a class="bh-btn bh-btn--secondary bh-btn--sm wn-press" href="/categories/new?kind=income"><Icon name="plus" size={18} /> Add income category</a></div>
 		</section>
 
 		<section class="bh-card" aria-labelledby="rec-title">
-			<a class="setting" href="/recurring">
+			<a class="setting wn-press" href="/recurring">
 				<span class="tile" aria-hidden="true"><Icon name="repeat" size={22} /></span>
 				<span class="setting__text"><span class="setting__title" id="rec-title">Recurring</span><span class="setting__sub">{data.recurring_count} active</span></span>
 				<Icon name="chevron-right" size={20} />
 			</a>
 			{#if archived.length}
-				<details class="disclosure disclosure--ruled">
+				<details class="disclosure disclosure--ruled" {@attach smoothDetails}>
 					<summary>Archived categories ({archived.length}) <Icon name="chevron-down" size={20} /></summary>
 					{#each archived as c (c.id)}
-						<a class="setting" href="/categories/{c.id}"><CategoryTile category={c} class="tile--off" /><span class="grow setting__title">{c.name}</span><span class="bh-tag">{KIND_NAMES[c.kind]}</span></a>
+						<a class="setting wn-press" href="/categories/{c.id}"><CategoryTile category={c} class="tile--off" /><span class="grow setting__title">{c.name}</span><span class="bh-tag">{KIND_NAMES[c.kind]}</span></a>
 					{/each}
 				</details>
 			{/if}
@@ -148,7 +150,7 @@
 			</div>
 			<div class="row" style="align-items:stretch">
 				<code class="code grow" style="min-width:0">{data.mcp_url}</code>
-				<button class="bh-btn bh-btn--secondary bh-btn--sm" type="button" onclick={() => copyMcp(data.mcp_url)}>Copy</button>
+				<button class="bh-btn bh-btn--secondary bh-btn--sm wn-press" type="button" onclick={() => copyMcp(data.mcp_url)}>Copy</button>
 			</div>
 		</section>
 
@@ -160,7 +162,7 @@
 				</div>
 			</div>
 			<div class="actions">
-				<button class="bh-btn bh-btn--secondary" type="button" disabled={signingOut} onclick={signOut}><Icon name="logout" size={18} /> Sign out</button>
+				<button class="bh-btn bh-btn--secondary wn-press" type="button" disabled={signingOut} onclick={signOut}><Icon name="logout" size={18} /> Sign out</button>
 			</div>
 		</section>
 	</div>

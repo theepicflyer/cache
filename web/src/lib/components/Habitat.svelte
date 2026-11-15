@@ -25,6 +25,7 @@
 
 <div class="bh-habitat bh-habitat--{kind} bh-habitat--page {klass}">
 	{@html scenes[kind].art}
-	<span class="bh-habitat__resident"><Mascot who={who ?? scenes[kind].resident} {mood} size={96} bounce /></span>
+	<!-- keyed, so the resident hops when its mood changes -->
+	<span class="bh-habitat__resident">{#key mood}<Mascot who={who ?? scenes[kind].resident} {mood} size={96} bounce />{/key}</span>
 	<div class="bh-habitat__content">{@render children()}</div>
 </div>

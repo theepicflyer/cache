@@ -7,10 +7,10 @@
 	 * Editing opens straight on the review page.
 	 */
 	import { goto, pushState } from '$app/navigation';
-	import { ApiError, del, get, patch, post } from '#lib/api.ts';
+	import { ApiError, changes, del, dragToDismiss, fade, get, haptic, patch, post, sheet } from 'warren/web';
 	import { calendarDays, daysAgo, localToday, shortDate, weekday } from '#lib/entry/dates.ts';
 	import { addDays, addMonths, month as monthText, monthOf, signedMoney } from '#lib/format.ts';
-	import { entry, ledger, toasts } from '#lib/state.svelte.ts';
+	import { entry, toasts } from '#lib/state.svelte.ts';
 	import type { Category, EntryData, Saved, Txn, TxnType, Unit } from '#lib/types.ts';
 	import { flushSync, onMount, tick, untrack } from 'svelte';
 	import CategoryIcon from './CategoryIcon.svelte';
@@ -107,14 +107,11 @@
 		} else if (s.int.length < 9) {
 			s.int = s.int === '0' ? k : s.int + k;
 		}
-		try {
-			navigator.vibrate?.(5);
-		} catch {
-			/* unsupported */
-		}
+		haptic('tap');
 	}
 
 	function setType(type: TxnType) {
+		if (s.type !== type) haptic('select');
 		s.type = type;
 		// Expenses never go to an income category.
 		if (s.category && type === 'expense' && cats.get(s.category)?.kind === 'income') s.category = null;
@@ -159,6 +156,7 @@
 	const incomeCats = $derived((data?.cats ?? []).filter((c) => c.kind === 'income'));
 	const otherCats = $derived((data?.cats ?? []).filter((c) => c.kind !== 'income'));
 	function pickCategory(c: Category) {
+		haptic('select');
 		s.category = c.id;
 		setTimeout(() => after('review'), 140);
 	}
@@ -199,8 +197,11 @@
 	const dotIndex = $derived(MAIN.indexOf(MAIN.includes(page) ? page : 'review'));
 
 	// ---------- navigation
-	/** Renders `name` now, so focus lands inside the tap that got here and the phone raises its keyboard. */
-	function show(name: Page) {
+	/**
+	 * Renders `name` now, so focus lands inside the tap that got here and the phone raises its keyboard.
+	 * The page slides in from the side it lies on: from the right going on, from the left going back.
+	 */
+	function show(name: Page, dir: 'forward' | 'back' | null = null) {
 		if (page === 'title') s.title = s.title.trim();
 		page = name;
 		error = '';
@@ -208,10 +209,10 @@
 		if (name === 'note') noteDraft = s.note;
 		flushSync();
 		const el = pageEls[name];
-		if (el) {
-			el.classList.remove('is-in');
+		if (el && dir) {
+			el.classList.remove('is-in', 'is-in-back');
 			void el.offsetWidth;
-			el.classList.add('is-in');
+			el.classList.add(dir === 'back' ? 'is-in-back' : 'is-in');
 		}
 		if (name === 'title') titleInput?.focus({ preventScroll: true });
 		else if (name === 'note') noteInput?.focus({ preventScroll: true });
@@ -219,6 +220,9 @@
 	}
 	function go(name: Page, { back = false } = {}) {
 		if (name === page) return;
+		// An earlier step of the main four (a summary chip) lies behind; from the review, everything is a detail.
+		const earlier = page !== 'review' && MAIN.includes(name) && MAIN.includes(page) && MAIN.indexOf(name) < MAIN.indexOf(page);
+		const dir = back || earlier ? 'back' : 'forward';
 		if (back) {
 			// Returning from a detail page: drop it from the trail.
 			const at = trail.lastIndexOf(name);
@@ -226,7 +230,7 @@
 		} else {
 			trail.push(page);
 		}
-		show(name);
+		show(name, dir);
 	}
 	// Finishing a page reached from the review goes back to the review; otherwise on to `next`.
 	function after(next: Page) {
@@ -235,7 +239,7 @@
 	}
 	function back() {
 		const prev = trail.pop();
-		if (prev) show(prev);
+		if (prev) show(prev, 'back');
 		else close();
 	}
 	function amountNext() {
@@ -288,6 +292,8 @@
 			pushed = true;
 		}
 		show(txn ? 'review' : 'amount');
+		// a sheet pulled down and caught again as it left keeps the finger's offset otherwise
+		if (panel) panel.style.translate = '';
 		panel?.focus({ preventScroll: true });
 		get<EntryData>('/api/entry')
 			.then((result) => {
@@ -361,11 +367,13 @@
 		const body = { type: s.type, amount: amountPayload, title: s.title, category: s.category, date: s.date, month: s.month, note: s.note, repeat: s.id ? '' : s.repeat };
 		try {
 			const res = s.id ? await patch<Saved>(`/api/transactions/${s.id}`, body) : await post<Saved>('/api/transactions', body);
+			haptic('success');
 			close();
-			ledger.changed();
+			changes.changed();
 			const id = res.undo;
 			toasts.show(res.toast, { action: id ? { label: 'Undo', run: () => undo(id) } : null });
 		} catch (err) {
+			haptic('warning');
 			error = err instanceof ApiError ? Object.values(err.errors).join(' ') || "Couldn't save." : "Couldn't save. Check your connection and try again.";
 		} finally {
 			busy = false;
@@ -374,7 +382,7 @@
 	async function undo(id: number) {
 		try {
 			const res = await del<Saved>(`/api/transactions/${id}`);
-			ledger.changed();
+			changes.changed();
 			toasts.show(res.toast, { mood: 'happy' });
 		} catch {
 			toasts.show("Couldn't undo. Delete it from History instead.", { who: 'kayu', mood: 'worried' });
@@ -385,8 +393,9 @@
 		busy = true;
 		try {
 			const res = await del<Saved>(`/api/transactions/${s.id}`);
+			haptic('warning');
 			close();
-			ledger.changed();
+			changes.changed();
 			const d = res.spend;
 			toasts.show(res.toast, {
 				mood: 'happy',
@@ -397,7 +406,7 @@
 								try {
 									const amount = `${Math.floor(d.amount / 100)}.${String(d.amount % 100).padStart(2, '0')}`;
 									await post<Saved>('/api/transactions', { type: d.type, amount, title: d.title, category: d.category_id, date: d.date, month: d.month, note: d.note, repeat: '' });
-									ledger.changed();
+									changes.changed();
 								} catch (err) {
 									toasts.error(err);
 								}
@@ -414,220 +423,225 @@
 </script>
 
 {#snippet seg(on: boolean, onclick: () => void, label: string)}
-	<button type="button" class="entry__seg-opt" class:is-on={on} role="radio" aria-checked={on} {onclick}>{label}</button>
+	<button type="button" class="entry__seg-opt wn-press" class:is-on={on} role="radio" aria-checked={on} {onclick}>{label}</button>
 {/snippet}
 
-<div class="entry" id="entry" class:is-income={income} class:is-kb={kb} hidden={!shown} style:--vvh={vvh} style:--vvt={vvt} {onkeydown} role="presentation">
-	<div class="entry__scrim" onclick={close} role="presentation"></div>
-	<div class="entry__panel" role="dialog" aria-modal="true" aria-labelledby="entry-q" tabindex="-1" bind:this={panel}>
-		<header class="entry__head">
-			<button type="button" class="entry__icon" aria-label="Back" style:visibility={trail.length ? 'visible' : 'hidden'} onclick={back}><Icon name="chevron-left" size={22} /></button>
-			<div class="entry__dots" aria-hidden="true" hidden={!!s.id}>
-				{#each MAIN as _, j (j)}<span class={j < dotIndex ? 'is-done' : j === dotIndex ? 'is-on' : ''}></span>{/each}
-			</div>
-			<button type="button" class="entry__icon" aria-label="Close" onclick={close}><Icon name="x" size={22} /></button>
-		</header>
-		<div class="entry__summary" hidden={!chips.length}>
-			{#each chips as [p, text] (p)}<button type="button" class="bh-chip" onclick={() => go(p)}>{text}</button>{/each}
-		</div>
-
-		<!-- 1. Amount -->
-		<div class="entry__page" hidden={page !== 'amount'} bind:this={pageEls.amount}>
-			<div class="entry__types" role="radiogroup" aria-label="Type">
-				<button type="button" class="entry__type" class:is-on={!income} role="radio" aria-checked={!income} onclick={() => setType('expense')}>Expense</button>
-				<button type="button" class="entry__type" class:is-on={income} role="radio" aria-checked={income} onclick={() => setType('income')}>Income</button>
-			</div>
-			<p class="entry__q" id="entry-q">How much?</p>
-			<div class="entry__amount num" class:is-empty={amountCents === 0} aria-live="polite"><span class="entry__cur">$</span><span>{amountDisplay}</span></div>
-			<div class="entry__numpad">
-				{#each ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0'] as k (k)}
-					<button type="button" class="entry__key" onclick={() => key(k)}>{k}</button>
-				{/each}
-				<button type="button" class="entry__key entry__key--flat" aria-label="Delete digit" onclick={() => key('back')}>⌫</button>
-			</div>
-			<div class="entry__bar"><button type="button" class="bh-btn bh-btn--primary bh-btn--block" disabled={amountCents <= 0} onclick={amountNext}>Next</button></div>
-		</div>
-
-		<!-- 2. Title -->
-		<div class="entry__page" hidden={page !== 'title'} bind:this={pageEls.title}>
-			<p class="entry__q">{income ? 'Where is it from?' : 'What was it?'}</p>
-			<div class="entry__titlebox">
-				<input
-					class="entry__title"
-					maxlength="200"
-					autocomplete="off"
-					autocapitalize="sentences"
-					enterkeyhint="next"
-					placeholder={income ? 'e.g. Salary' : 'e.g. Chicken rice'}
-					aria-label="Title"
-					bind:value={s.title}
-					bind:this={titleInput}
-					onkeydown={(e) => {
-						if (e.key === 'Enter') {
-							e.preventDefault();
-							titleDone();
-						}
-					}}
-				/>
-				<button type="button" class="bh-btn bh-btn--primary bh-btn--sm" onclick={titleDone}>Next</button>
-			</div>
-			<p class="entry__hint" hidden={!suggestions.length}>Pick one you used before to skip the category.</p>
-			<ul class="entry__suggest" role="listbox" aria-label="Past titles">
-				{#each suggestions as m (m.t + m.c)}
-					{@const c = cats.get(m.c)}
-					<li>
-						<!-- pointerdown keeps the keyboard from bouncing before the page changes -->
-						<button type="button" onpointerdown={(e) => e.preventDefault()} onclick={() => suggest(m)}>
-							<span>{m.t}</span>
-							<span class="entry__suggest-cat">{#if c?.display_icon}<CategoryIcon name={c.display_icon} size={18} />{/if}{c?.name ?? ''}</span>
-						</button>
-					</li>
-				{/each}
-			</ul>
-		</div>
-
-		<!-- 3. Category -->
-		<div class="entry__page" hidden={page !== 'category'} bind:this={pageEls.category}>
-			<p class="entry__q">{income ? 'Which category?' : 'What for?'}</p>
-			<div class="entry__scroll">
-				<div class="entry__cats">
-					{#if data && !data.cats.length}
-						<p class="small muted">No categories yet. <a href="/categories/new" onclick={(e) => leave(e, '/categories/new')}>Add a category</a> first.</p>
-					{/if}
-					{#snippet catButton(c: Category)}
-						<button type="button" class="entry__cat" class:is-on={c.id === s.category} onclick={() => pickCategory(c)}>
-							<CategoryTile category={c} />
-							<span class="entry__cat-name">{c.name}</span>
-						</button>
-					{/snippet}
-					{#if income}
-						{#each incomeCats as c (c.id)}{@render catButton(c)}{/each}
-						{#if incomeCats.length}<p class="entry__label">Money back to</p>{/if}
-					{/if}
-					{#each otherCats as c (c.id)}{@render catButton(c)}{/each}
-				</div>
-			</div>
-		</div>
-
-		<!-- 4. Review: everything optional is on the page, one tap to change -->
-		<div class="entry__page" hidden={page !== 'review'} bind:this={pageEls.review}>
-			<div class="entry__scroll">
-				<div class="entry__hero">
-					<button type="button" class="entry__hero-amount num" class:in-text={income} onclick={() => go('amount')}>{signedMoney(amountCents, s.type)}</button>
-					<button type="button" class="entry__hero-title" class:muted={!s.title} onclick={() => go('title')}>{s.title || cat?.name || 'Add a title'}</button>
-					<button type="button" class="entry__hero-cat" class:is-missing={!cat} onclick={() => go('category')}>
-						{#if cat}<span class="entry__hero-tile"><CategoryTile category={cat} /></span>{/if}
-						<span class="grow"><span class="entry__hero-cat-name">{cat ? cat.name : 'Pick a category'}</span><span class="entry__hero-cat-kind">{kindLine}</span></span>
-						<span class="entry__hero-change">Change</span>
-					</button>
-				</div>
-
-				<div class="entry__field">
-					<p class="entry__label"><Icon name="calendar" size={18} /> Date</p>
-					<!-- Older on the left, today on the right; "Other" shows any other picked date. -->
-					<div class="entry__seg" role="radiogroup" aria-label="Date">
-						<button type="button" class="entry__seg-opt" class:is-on={otherDate} role="radio" aria-checked={otherDate} onclick={() => go('date')}>
-							{#if otherDate}{shortDate(s.date, today)}{:else}<Icon name="calendar" size={16} /><span>Other</span>{/if}
-						</button>
-						{@render seg(ago === 2, () => pickDate(dayAgo(2)), weekday(dayAgo(2), 'short'))}
-						{@render seg(ago === 1, () => pickDate(dayAgo(1)), 'Yesterday')}
-						{@render seg(ago === 0, () => pickDate(dayAgo(0)), 'Today')}
+{#if shown}
+	<!-- The sheet rises in and drops away; on phones it can be pulled down by its grab handle to close. -->
+	<div class="entry" id="entry" class:is-income={income} class:is-kb={kb} style:--vvh={vvh} style:--vvt={vvt} {onkeydown} role="presentation">
+		<div class="entry__scrim" onclick={close} role="presentation" transition:fade={{ duration: 200 }}></div>
+		<div class="entry__panel" role="dialog" aria-modal="true" aria-labelledby="entry-q" tabindex="-1" bind:this={panel} in:sheet out:sheet {@attach dragToDismiss({ onDismiss: close })}>
+			<header class="entry__head">
+				<button type="button" class="entry__icon wn-press" aria-label="Back" style:visibility={trail.length ? 'visible' : 'hidden'} onclick={back}><Icon name="chevron-left" size={22} /></button>
+				<div class="entry__grab" data-drag-handle>
+					<div class="entry__dots" aria-hidden="true" hidden={!!s.id}>
+						{#each MAIN as _, j (j)}<span class={j < dotIndex ? 'is-done' : j === dotIndex ? 'is-on' : ''}></span>{/each}
 					</div>
 				</div>
-
-				<div class="entry__field">
-					<p class="entry__label"><Icon name="chart" size={18} /> Counts toward</p>
-					<div class="entry__seg entry__seg--3" role="radiogroup" aria-label="Counts toward">
-						{@render seg(otherMonth, () => go('month'), otherMonth ? monthLabel(s.month) : 'Other')}
-						{#each nearMonths as m (m)}{@render seg(m === s.month, () => pickMonth(m, false), monthLabel(m))}{/each}
-					</div>
-				</div>
-
-				{#if !s.id}
-					<div class="entry__field">
-						<p class="entry__label"><Icon name="repeat" size={18} /> Repeat</p>
-						<div class="entry__seg" role="radiogroup" aria-label="Repeat">
-							{#each [['', 'Never'], ['week', 'Weekly'], ['month', 'Monthly'], ['year', 'Yearly']] as const as [value, label] (value)}
-								{@render seg(s.repeat === value, () => (s.repeat = value), label)}
-							{/each}
-						</div>
-					</div>
-				{/if}
-
-				<div class="entry__field">
-					<p class="entry__label"><Icon name="note" size={18} /> Note</p>
-					<button type="button" class="entry__notebox" class:is-set={!!s.note.trim()} onclick={() => go('note')}>{s.note.trim() || 'Add a note'}</button>
-				</div>
-
-				{#if s.recurring}
-					<p class="note">
-						Added by the recurring <a href="/recurring/{s.recurring}" onclick={(e) => leave(e, `/recurring/${s.recurring}`)}>{s.recurringTitle || 'entry'}</a>. Changes here only affect this entry; edit the recurring one to
-						change those still to come.
-					</p>
-				{/if}
-				<p class="form-error" role="alert">{error}</p>
+				<button type="button" class="entry__icon wn-press" aria-label="Close" onclick={close}><Icon name="x" size={22} /></button>
+			</header>
+			<div class="entry__summary" hidden={!chips.length}>
+				{#each chips as [p, text] (p)}<button type="button" class="bh-chip wn-press" onclick={() => go(p)}>{text}</button>{/each}
 			</div>
-			<div class="entry__bar entry__bar--review">
-				{#if s.id}
-					<button type="button" class="bh-btn bh-btn--ghost bh-btn--danger" onclick={remove}><Icon name="trash" size={20} /> Delete</button>
-				{/if}
-				<button type="button" class="bh-btn bh-btn--primary grow" disabled={busy} onclick={save}>{s.id ? 'Save changes' : `Add ${income ? 'income' : 'expense'}`}</button>
-			</div>
-		</div>
 
-		<!-- Review details, one page each -->
-		<div class="entry__page" hidden={page !== 'date'} bind:this={pageEls.date}>
-			<p class="entry__q">When?</p>
-			<div class="entry__scroll">
-				<div class="entry__shortcuts">
-					<button type="button" class="bh-chip" onclick={() => pickDate(dayAgo(2))}>{weekday(dayAgo(2), 'long')}</button>
-					<button type="button" class="bh-chip" onclick={() => pickDate(dayAgo(1))}>Yesterday</button>
-					<button type="button" class="bh-chip" onclick={() => pickDate(dayAgo(0))}>Today</button>
+			<!-- 1. Amount -->
+			<div class="entry__page" hidden={page !== 'amount'} bind:this={pageEls.amount}>
+				<div class="entry__types" role="radiogroup" aria-label="Type">
+					<button type="button" class="entry__type wn-press" class:is-on={!income} role="radio" aria-checked={!income} onclick={() => setType('expense')}>Expense</button>
+					<button type="button" class="entry__type wn-press" class:is-on={income} role="radio" aria-checked={income} onclick={() => setType('income')}>Income</button>
 				</div>
-				{#if calView}
-					<div class="entry__cal">
-						<div class="entry__cal-head">
-							<button type="button" class="entry__icon" aria-label="Previous month" onclick={() => (calView = addMonths(calView, -1))}><Icon name="chevron-left" size={20} /></button>
-							<span>{monthText(calView)}</span>
-							<button type="button" class="entry__icon" aria-label="Next month" onclick={() => (calView = addMonths(calView, 1))}><Icon name="chevron-right" size={20} /></button>
-						</div>
-						<div class="entry__cal-grid">
-							{#each ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as d, i (i)}<span class="entry__cal-dow">{d}</span>{/each}
-							{#each calendarDays(calView) as d (d)}
-								<button type="button" class="entry__day" class:is-out={monthOf(d) !== calView} class:is-on={d === s.date} class:is-today={d === today} onclick={() => pickDate(d)}>{Number(d.slice(8))}</button>
-							{/each}
-						</div>
-					</div>
-				{/if}
-			</div>
-		</div>
-		<div class="entry__page" hidden={page !== 'month'} bind:this={pageEls.month}>
-			<p class="entry__q">Which month does it count toward?</p>
-			<p class="entry__hint">For a bill that arrives after the month it's for.</p>
-			<div class="entry__scroll">
-				<div class="entry__months">
-					{#each monthChoices as m (m.value)}
-						<button type="button" class="entry__choice" class:is-on={m.value === s.month} onclick={() => pickMonth(m.value, true)}>
-							{monthText(m.value)}{#if m.own}<span class="entry__choice-sub">Month of the date</span>{/if}
-						</button>
+				<p class="entry__q" id="entry-q">How much?</p>
+				<div class="entry__amount num" class:is-empty={amountCents === 0} aria-live="polite"><span class="entry__cur">$</span><span>{amountDisplay}</span></div>
+				<div class="entry__numpad">
+					{#each ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0'] as k (k)}
+						<button type="button" class="entry__key wn-press" onclick={() => key(k)}>{k}</button>
 					{/each}
+					<button type="button" class="entry__key entry__key--flat wn-press" aria-label="Delete digit" onclick={() => key('back')}>⌫</button>
+				</div>
+				<div class="entry__bar"><button type="button" class="bh-btn bh-btn--primary bh-btn--block wn-press" disabled={amountCents <= 0} onclick={amountNext}>Next</button></div>
+			</div>
+
+			<!-- 2. Title -->
+			<div class="entry__page" hidden={page !== 'title'} bind:this={pageEls.title}>
+				<p class="entry__q">{income ? 'Where is it from?' : 'What was it?'}</p>
+				<div class="entry__titlebox">
+					<input
+						class="entry__title"
+						maxlength="200"
+						autocomplete="off"
+						autocapitalize="sentences"
+						enterkeyhint="next"
+						placeholder={income ? 'e.g. Salary' : 'e.g. Chicken rice'}
+						aria-label="Title"
+						bind:value={s.title}
+						bind:this={titleInput}
+						onkeydown={(e) => {
+							if (e.key === 'Enter') {
+								e.preventDefault();
+								titleDone();
+							}
+						}}
+					/>
+					<button type="button" class="bh-btn bh-btn--primary bh-btn--sm wn-press" onclick={titleDone}>Next</button>
+				</div>
+				<p class="entry__hint" hidden={!suggestions.length}>Pick one you used before to skip the category.</p>
+				<ul class="entry__suggest" role="listbox" aria-label="Past titles">
+					{#each suggestions as m (m.t + m.c)}
+						{@const c = cats.get(m.c)}
+						<li>
+							<!-- pointerdown keeps the keyboard from bouncing before the page changes -->
+							<button type="button" onpointerdown={(e) => e.preventDefault()} onclick={() => suggest(m)}>
+								<span>{m.t}</span>
+								<span class="entry__suggest-cat">{#if c?.display_icon}<CategoryIcon name={c.display_icon} size={18} />{/if}{c?.name ?? ''}</span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</div>
+
+			<!-- 3. Category -->
+			<div class="entry__page" hidden={page !== 'category'} bind:this={pageEls.category}>
+				<p class="entry__q">{income ? 'Which category?' : 'What for?'}</p>
+				<div class="entry__scroll">
+					<div class="entry__cats">
+						{#if data && !data.cats.length}
+							<p class="small muted">No categories yet. <a href="/categories/new" onclick={(e) => leave(e, '/categories/new')}>Add a category</a> first.</p>
+						{/if}
+						{#snippet catButton(c: Category)}
+							<button type="button" class="entry__cat wn-press" class:is-on={c.id === s.category} onclick={() => pickCategory(c)}>
+								<CategoryTile category={c} />
+								<span class="entry__cat-name">{c.name}</span>
+							</button>
+						{/snippet}
+						{#if income}
+							{#each incomeCats as c (c.id)}{@render catButton(c)}{/each}
+							{#if incomeCats.length}<p class="entry__label">Money back to</p>{/if}
+						{/if}
+						{#each otherCats as c (c.id)}{@render catButton(c)}{/each}
+					</div>
 				</div>
 			</div>
-		</div>
-		<div class="entry__page" hidden={page !== 'note'} bind:this={pageEls.note}>
-			<p class="entry__q">Note</p>
-			<!-- A draft, so the back arrow discards the edit. -->
-			<textarea class="textarea entry__note" rows="3" placeholder="Anything to remember about it" aria-label="Note" bind:value={noteDraft} bind:this={noteInput}></textarea>
-			<div class="entry__bar entry__bar--inline">
-				<button
-					type="button"
-					class="bh-btn bh-btn--primary bh-btn--block"
-					onclick={() => {
-						s.note = noteDraft;
-						go('review', { back: true });
-					}}>Done</button
-				>
+
+			<!-- 4. Review: everything optional is on the page, one tap to change -->
+			<div class="entry__page" hidden={page !== 'review'} bind:this={pageEls.review}>
+				<div class="entry__scroll">
+					<div class="entry__hero">
+						<button type="button" class="entry__hero-amount num" class:in-text={income} onclick={() => go('amount')}>{signedMoney(amountCents, s.type)}</button>
+						<button type="button" class="entry__hero-title" class:muted={!s.title} onclick={() => go('title')}>{s.title || cat?.name || 'Add a title'}</button>
+						<button type="button" class="entry__hero-cat" class:is-missing={!cat} onclick={() => go('category')}>
+							{#if cat}<span class="entry__hero-tile"><CategoryTile category={cat} /></span>{/if}
+							<span class="grow"><span class="entry__hero-cat-name">{cat ? cat.name : 'Pick a category'}</span><span class="entry__hero-cat-kind">{kindLine}</span></span>
+							<span class="entry__hero-change">Change</span>
+						</button>
+					</div>
+
+					<div class="entry__field">
+						<p class="entry__label"><Icon name="calendar" size={18} /> Date</p>
+						<!-- Older on the left, today on the right; "Other" shows any other picked date. -->
+						<div class="entry__seg" role="radiogroup" aria-label="Date">
+							<button type="button" class="entry__seg-opt wn-press" class:is-on={otherDate} role="radio" aria-checked={otherDate} onclick={() => go('date')}>
+								{#if otherDate}{shortDate(s.date, today)}{:else}<Icon name="calendar" size={16} /><span>Other</span>{/if}
+							</button>
+							{@render seg(ago === 2, () => pickDate(dayAgo(2)), weekday(dayAgo(2), 'short'))}
+							{@render seg(ago === 1, () => pickDate(dayAgo(1)), 'Yesterday')}
+							{@render seg(ago === 0, () => pickDate(dayAgo(0)), 'Today')}
+						</div>
+					</div>
+
+					<div class="entry__field">
+						<p class="entry__label"><Icon name="chart" size={18} /> Counts toward</p>
+						<div class="entry__seg entry__seg--3" role="radiogroup" aria-label="Counts toward">
+							{@render seg(otherMonth, () => go('month'), otherMonth ? monthLabel(s.month) : 'Other')}
+							{#each nearMonths as m (m)}{@render seg(m === s.month, () => pickMonth(m, false), monthLabel(m))}{/each}
+						</div>
+					</div>
+
+					{#if !s.id}
+						<div class="entry__field">
+							<p class="entry__label"><Icon name="repeat" size={18} /> Repeat</p>
+							<div class="entry__seg" role="radiogroup" aria-label="Repeat">
+								{#each [['', 'Never'], ['week', 'Weekly'], ['month', 'Monthly'], ['year', 'Yearly']] as const as [value, label] (value)}
+									{@render seg(s.repeat === value, () => (s.repeat = value), label)}
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					<div class="entry__field">
+						<p class="entry__label"><Icon name="note" size={18} /> Note</p>
+						<button type="button" class="entry__notebox" class:is-set={!!s.note.trim()} onclick={() => go('note')}>{s.note.trim() || 'Add a note'}</button>
+					</div>
+
+					{#if s.recurring}
+						<p class="note">
+							Added by the recurring <a href="/recurring/{s.recurring}" onclick={(e) => leave(e, `/recurring/${s.recurring}`)}>{s.recurringTitle || 'entry'}</a>. Changes here only affect this entry; edit the recurring one to
+							change those still to come.
+						</p>
+					{/if}
+					<p class="form-error" role="alert">{error}</p>
+				</div>
+				<div class="entry__bar entry__bar--review">
+					{#if s.id}
+						<button type="button" class="bh-btn bh-btn--ghost bh-btn--danger wn-press" onclick={remove}><Icon name="trash" size={20} /> Delete</button>
+					{/if}
+					<button type="button" class="bh-btn bh-btn--primary grow wn-press" disabled={busy} onclick={save}>{s.id ? 'Save changes' : `Add ${income ? 'income' : 'expense'}`}</button>
+				</div>
+			</div>
+
+			<!-- Review details, one page each -->
+			<div class="entry__page" hidden={page !== 'date'} bind:this={pageEls.date}>
+				<p class="entry__q">When?</p>
+				<div class="entry__scroll">
+					<div class="entry__shortcuts">
+						<button type="button" class="bh-chip wn-press" onclick={() => pickDate(dayAgo(2))}>{weekday(dayAgo(2), 'long')}</button>
+						<button type="button" class="bh-chip wn-press" onclick={() => pickDate(dayAgo(1))}>Yesterday</button>
+						<button type="button" class="bh-chip wn-press" onclick={() => pickDate(dayAgo(0))}>Today</button>
+					</div>
+					{#if calView}
+						<div class="entry__cal">
+							<div class="entry__cal-head">
+								<button type="button" class="entry__icon" aria-label="Previous month" onclick={() => (calView = addMonths(calView, -1))}><Icon name="chevron-left" size={20} /></button>
+								<span>{monthText(calView)}</span>
+								<button type="button" class="entry__icon" aria-label="Next month" onclick={() => (calView = addMonths(calView, 1))}><Icon name="chevron-right" size={20} /></button>
+							</div>
+							<div class="entry__cal-grid">
+								{#each ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as d, i (i)}<span class="entry__cal-dow">{d}</span>{/each}
+								{#each calendarDays(calView) as d (d)}
+									<button type="button" class="entry__day" class:is-out={monthOf(d) !== calView} class:is-on={d === s.date} class:is-today={d === today} onclick={() => pickDate(d)}>{Number(d.slice(8))}</button>
+								{/each}
+							</div>
+						</div>
+					{/if}
+				</div>
+			</div>
+			<div class="entry__page" hidden={page !== 'month'} bind:this={pageEls.month}>
+				<p class="entry__q">Which month does it count toward?</p>
+				<p class="entry__hint">For a bill that arrives after the month it's for.</p>
+				<div class="entry__scroll">
+					<div class="entry__months">
+						{#each monthChoices as m (m.value)}
+							<button type="button" class="entry__choice wn-press" class:is-on={m.value === s.month} onclick={() => pickMonth(m.value, true)}>
+								{monthText(m.value)}{#if m.own}<span class="entry__choice-sub">Month of the date</span>{/if}
+							</button>
+						{/each}
+					</div>
+				</div>
+			</div>
+			<div class="entry__page" hidden={page !== 'note'} bind:this={pageEls.note}>
+				<p class="entry__q">Note</p>
+				<!-- A draft, so the back arrow discards the edit. -->
+				<textarea class="textarea entry__note" rows="3" placeholder="Anything to remember about it" aria-label="Note" bind:value={noteDraft} bind:this={noteInput}></textarea>
+				<div class="entry__bar entry__bar--inline">
+					<button
+						type="button"
+						class="bh-btn bh-btn--primary bh-btn--block wn-press"
+						onclick={() => {
+							s.note = noteDraft;
+							go('review', { back: true });
+						}}>Done</button
+					>
+				</div>
 			</div>
 		</div>
 	</div>
-</div>
+{/if}

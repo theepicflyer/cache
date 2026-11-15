@@ -1,6 +1,9 @@
 FROM node:24-slim AS web
+# The web app imports warren/web from Warren's git repository; .npmrc keeps npm from building
+# Warren's server half here.
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /web
-COPY web/package.json web/package-lock.json ./
+COPY web/package.json web/package-lock.json web/.npmrc ./
 RUN npm ci
 COPY web/ ./
 RUN npm run build

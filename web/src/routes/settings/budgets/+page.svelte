@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { ApiError, put, query } from '#lib/api.ts';
+	import { ApiError, changes, loaded, put, query } from 'warren/web';
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
 	import Habitat from '#lib/components/Habitat.svelte';
-	import Loading from '#lib/components/Loading.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
 	import { month } from '#lib/format.ts';
-	import { loaded } from '#lib/load.svelte.ts';
-	import { ledger, toasts } from '#lib/state.svelte.ts';
+	import { toasts } from '#lib/state.svelte.ts';
 	import type { Budgets, Saved } from '#lib/types.ts';
 
 	const budgets = loaded<Budgets>(() => `/api/budgets${query({ from_month: page.url.searchParams.get('from_month') })}`);
@@ -35,7 +34,7 @@
 		try {
 			const res = await put<Saved>('/api/budgets', { from_month: data.from_month, amounts });
 			toasts.show(res.toast);
-			ledger.changed();
+			changes.changed();
 			await goto('/settings');
 		} catch (err) {
 			if (err instanceof ApiError && Object.keys(err.errors).length) errors = err.errors;
@@ -55,7 +54,7 @@
 </Habitat>
 
 {#if !data}
-	<Loading />
+	<Skeleton habitat={false} cards={[480]} />
 {:else}
 	<form class="bh-card form-grid" onsubmit={save} novalidate>
 		<div class="field">
@@ -82,8 +81,8 @@
 			{/each}
 		</div>
 		<div class="actions actions--end">
-			<a class="bh-btn bh-btn--ghost" href="/settings">Cancel</a>
-			<button class="bh-btn bh-btn--primary" type="submit" disabled={saving}>Save amounts</button>
+			<a class="bh-btn bh-btn--ghost wn-press" href="/settings">Cancel</a>
+			<button class="bh-btn bh-btn--primary wn-press" type="submit" disabled={saving}>Save amounts</button>
 		</div>
 	</form>
 {/if}
