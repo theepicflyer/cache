@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { get, post } from 'warren/web';
-	import world from '#lib/burrow/scenes/world.html?raw';
+	import { World } from 'warren/burrow';
 	import { session, toasts } from '#lib/state.svelte.ts';
 	import { onMount } from 'svelte';
 
@@ -33,7 +33,7 @@
 
 <main class="login">
 	<div class="login__card">
-		<div class="login__world">{@html world}</div>
+		<div class="login__world"><World /></div>
 		<div class="bh-card stack">
 			<h1 class="page-title" style="text-align:center">Cache</h1>
 			{#if config?.oidc}

@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { forgetData, loaded, post } from 'warren/web';
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
-	import Habitat from '#lib/components/Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import Icon from '#lib/components/Icon.svelte';
 	import Skeleton from '#lib/components/Skeleton.svelte';
 	import { money } from '#lib/format.ts';
@@ -55,7 +55,7 @@
 
 <svelte:head><title>Settings · Cache</title></svelte:head>
 
-<Habitat kind="river" mood="happy">
+<Habitat class="bh-habitat--page" bounce kind="river" mood="happy">
 	<span class="bh-habitat__eyebrow">Household</span>
 	<h1 class="page-title">Settings</h1>
 	<p class="bh-habitat__sub">Categories, budgets, funds and recurring</p>

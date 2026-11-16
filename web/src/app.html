@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="wygiwyh_dark">
+<html lang="en" data-theme="dark">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual" />
@@ -11,7 +11,7 @@
 					c = localStorage.getItem('burrow-theme') || 'system';
 				} catch (e) {}
 				var dark = c === 'dark' || (c !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-				document.documentElement.dataset.theme = dark ? 'wygiwyh_dark' : 'wygiwyh_light';
+				document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 			})();
 		</script>
 		<meta name="theme-color" content="#fff7ea" media="(prefers-color-scheme: light)" />

@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img alt="Kacang the squirrel" src="./web/static/img/burrow/characters/kacang-happy.svg" width="120" />
+  <img alt="Kacang the squirrel" src="./docs/kacang-happy.svg" width="120" />
   <br>
   Cache
 </h1>

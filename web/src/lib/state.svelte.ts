@@ -3,12 +3,13 @@
  * are warren/web's; after a write, call `changes.changed()` (from warren/web) so loaded screens refresh.
  */
 import { Session, Toasts } from 'warren/web';
+import type { Mood } from 'warren/burrow';
 import type { Me, Txn } from './types.ts';
 
 export const session = new Session<Me>();
 
 export type Who = 'kacang' | 'gali' | 'kayu' | 'bao';
-export type Mood = 'happy' | 'joy' | 'busy' | 'sleepy' | 'worried' | 'wow';
+export type { Mood } from 'warren/burrow';
 
 /** Burrow toasts: a small animal and a message, one at a time, above the bottom nav. Errors are Kayu, worried. */
 export const toasts = new Toasts<{ who: Who; mood: Mood }>({

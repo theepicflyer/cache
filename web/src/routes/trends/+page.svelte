@@ -4,7 +4,7 @@
 	import CategoryTile from '#lib/components/CategoryTile.svelte';
 	import Chart from '#lib/components/Chart.svelte';
 	import Empty from '#lib/components/Empty.svelte';
-	import Habitat from '#lib/components/Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import Icon from '#lib/components/Icon.svelte';
 	import Skeleton from '#lib/components/Skeleton.svelte';
 	import Meter from '#lib/components/Meter.svelte';
@@ -52,7 +52,7 @@
 {#if !a}
 	<Skeleton />
 {:else}
-	<Habitat kind="oak" mood={a.flagged.length ? 'worried' : 'happy'}>
+	<Habitat class="bh-habitat--page" bounce kind="oak" mood={a.flagged.length ? 'worried' : 'happy'}>
 		<span class="bh-habitat__eyebrow">
 			<span class="month-nav"><a href="/trends{query({ months: a.span, end: a.prev_end })}" aria-label="Earlier"><Icon name="chevron-left" size={16} /></a></span>
 			{month(a.months[0] ?? a.end, 'short')} to {month(a.end, 'short')}

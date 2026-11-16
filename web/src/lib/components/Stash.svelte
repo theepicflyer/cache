@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { stashArt } from '#lib/burrow/scenes/art.ts';
+	import { stashArt } from 'warren/burrow';
 
 	/**
 	 * Burrow Stash: a sinking fund as Kacang's buried acorn store, with 0 to 15 acorns. The children

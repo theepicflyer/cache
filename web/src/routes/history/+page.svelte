@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { fade, flip, get, loaded, query, rise, row } from 'warren/web';
 	import Empty from '#lib/components/Empty.svelte';
-	import Habitat from '#lib/components/Habitat.svelte';
+	import { Habitat } from 'warren/burrow';
 	import Icon from '#lib/components/Icon.svelte';
 	import Skeleton from '#lib/components/Skeleton.svelte';
 	import TransactionRow from '#lib/components/TransactionRow.svelte';
@@ -83,7 +83,7 @@
 {#if !data}
 	<Skeleton cards={[150, 300, 300]} />
 {:else}
-	<Habitat kind="burrow" mood={data.filtered && !data.count ? 'worried' : 'happy'}>
+	<Habitat class="bh-habitat--page" bounce kind="burrow" mood={data.filtered && !data.count ? 'worried' : 'happy'}>
 		<span class="bh-habitat__eyebrow">Transactions</span>
 		<h1 class="page-title">History</h1>
 		{#if data.filtered}
