@@ -171,7 +171,8 @@
 					</div>
 				</details>
 			{/if}
-			<div class="bh-card__foot">
+			<!-- the card's action, in the tray along its bottom -->
+			<div class="bh-card__tray">
 				<button class="bh-btn bh-btn--ghost bh-btn--sm bh-btn--danger wn-press" type="button" onclick={remove}><Icon name="trash" size={18} /> {data.recent.length ? 'Archive' : 'Delete'} {cat.name}</button>
 			</div>
 		</section>

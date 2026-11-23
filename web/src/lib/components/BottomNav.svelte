@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { NAV, activeNav } from '#lib/nav.ts';
 	import { page } from '$app/state';
-	import { entry } from '#lib/state.svelte.ts';
+	import { entry, toasts } from '#lib/state.svelte.ts';
 	import { slidingPill } from 'warren/web';
 	import { Mascot } from 'warren/burrow';
 	import Icon from './Icon.svelte';
 
-	/** Burrow BottomNav on phones: four destinations and the add button, Kacang peeking over the top. It holds still while screens change, and its highlight slides. */
+	/** Burrow BottomNav on phones: four destinations and the add button, Kacang peeking over the top. It holds still while screens change, its highlight slides, and it slides away while a toast has its place. */
 	const active = $derived(activeNav(page.url.pathname));
 </script>
 
@@ -16,7 +16,7 @@
 	</a>
 {/snippet}
 
-<div class="bh-bottomnav" data-wn-keep="dock">
+<div class="bh-bottomnav" class:is-away={toasts.current} data-wn-keep="dock">
 	<Mascot character="kacang" mood="happy" size={56} class="bh-bottomnav__peek" />
 	<nav class="bh-nav" aria-label="Main" {@attach slidingPill()}>
 		{@render link(NAV[0])}

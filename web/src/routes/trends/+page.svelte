@@ -29,7 +29,6 @@
 	);
 	const cellTitle = (c: Cell) => `${month(c.month)}: ${money(c.spent)} of ${money(c.budget)}`;
 	/** The budget as a share of the spend, for the tick on an over-budget meter. */
-	const limit = (spent: number, budget: number) => (spent > 0 ? Math.round((budget / spent) * 100) : null);
 	const spans = [6, 12, 24];
 
 	// Other months: earlier or later slide in from their side; another span cross-fades.
@@ -154,10 +153,9 @@
 						<a class="meter-link wn-press" href="/categories/{t.category.id}">
 							<Meter
 								label={t.category.name}
-								percent={t.avg_percent ?? 0}
-								over={t.avg_over}
-								limit={limit(t.avg_spent, t.avg_budget)}
-								value="{money(t.avg_spent)} / {money(t.avg_budget)}"
+								value={t.avg_spent}
+								max={t.avg_budget}
+								valueText="{money(t.avg_spent)} / {money(t.avg_budget)}"
 								tag={t.months_over ? `over ${t.months_over}×` : ''}
 								tagClass={t.consistently_over ? 'bh-tag--over' : ''}
 							/>
