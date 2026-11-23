@@ -4,11 +4,11 @@
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { arrivedBy, configureApi, configureData, forgetData, pageTransition, swipeBack } from 'warren/web';
+	import { Toast } from 'warren/burrow';
 	import BottomNav from '#lib/components/BottomNav.svelte';
 	import Entry from '#lib/components/Entry.svelte';
 	import Loading from '#lib/components/Loading.svelte';
 	import Rail from '#lib/components/Rail.svelte';
-	import Toasts from '#lib/components/Toasts.svelte';
 	import { arrival } from '#lib/motion.svelte.ts';
 	import { NAV, activeNav } from '#lib/nav.ts';
 	import { session, toasts } from '#lib/state.svelte.ts';
@@ -83,7 +83,7 @@
 	});
 </script>
 
-<Toasts />
+<Toast {toasts} look={(t) => ({ character: t.who, mood: t.mood })} class="toasts {isLogin ? '' : 'toasts--app'}" />
 
 {#if isLogin}
 	{@render children()}

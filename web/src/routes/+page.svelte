@@ -43,7 +43,6 @@
 
 	const spentText = (b: BudgetLine) => `${b.spent < 0 ? `${money(-b.spent)} back` : money(b.spent)} / ${money(b.budget)}`;
 	/** The budget as a share of what was spent, for the tick on an over-budget meter. */
-	const limit = (b: BudgetLine) => (b.spent > 0 ? Math.round((b.budget / b.spent) * 100) : null);
 </script>
 
 <svelte:head><title>{data ? month(data.month) : 'Home'} · Cache</title></svelte:head>
@@ -120,7 +119,7 @@
 						<div class="meters">
 							{#each status.budgets as b (b.category.id)}
 								<a class="meter-link wn-press" href="/history{query({ category: b.category.id, month: data.month })}">
-									<Meter label={b.category.name} percent={b.percent} over={b.over} limit={limit(b)} value={spentText(b)} tag={b.over ? 'over' : ''} tagClass="bh-tag--over" />
+									<Meter label={b.category.name} value={b.spent} max={b.budget} valueText={spentText(b)} tag={b.over ? 'over' : ''} />
 								</a>
 							{/each}
 						</div>

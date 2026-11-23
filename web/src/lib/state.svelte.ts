@@ -11,11 +11,12 @@ export const session = new Session<Me>();
 export type Who = 'kacang' | 'gali' | 'kayu' | 'bao';
 export type { Mood } from 'warren/burrow';
 
-/** Burrow toasts: a small animal and a message, one at a time, above the bottom nav. Errors are Kayu, worried. */
+/** Burrow toasts: a small animal and a message, one at a time, in the bottom nav's place; warren/burrow's Toast times them. Errors are Kayu, worried. */
 export const toasts = new Toasts<{ who: Who; mood: Mood }>({
 	defaults: { who: 'kacang', mood: 'joy' },
 	onError: { who: 'kayu', mood: 'worried' },
-	max: 1
+	max: 1,
+	timed: false
 });
 
 /**
